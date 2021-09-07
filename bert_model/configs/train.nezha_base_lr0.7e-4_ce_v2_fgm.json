@@ -1,20 +1,21 @@
 /*
-线上：0.52170734544
+线上：0.52736229011
 
-loss = 2.575510252846612
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__f1-score__level_2 = 0.5323257686923674
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__precision__level_2 = 0.5433092793565473
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__recall__level_2 = 0.5547449039221721
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__support__level_2 = 2821
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__f1-score__level_2 = 0.6697822619742119
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__precision__level_2 = 0.6897326029522685
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__recall__level_2 = 0.6618220489188231
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__support__level_2 = 2821
+accuracy__level_2 = 0.641261963842609
+09/02/2021 11:10:47 - INFO - training.Trainer -     loss = 2.5218589577409958
+09/02/2021 11:10:47 - INFO - training.Trainer -     macro avg__f1-score__level_2 = 0.5081483851874639
+09/02/2021 11:10:47 - INFO - training.Trainer -     macro avg__precision__level_2 = 0.5173254448967141
+09/02/2021 11:10:47 - INFO - training.Trainer -     macro avg__recall__level_2 = 0.5142345017957357
+09/02/2021 11:10:47 - INFO - training.Trainer -     macro avg__support__level_2 = 2821
+09/02/2021 11:10:47 - INFO - training.Trainer -     weighted avg__f1-score__level_2 = 0.6490094198977051
+09/02/2021 11:10:47 - INFO - training.Trainer -     weighted avg__precision__level_2 = 0.6642254784202183
+09/02/2021 11:10:47 - INFO - training.Trainer -     weighted avg__recall__level_2 = 0.641261963842609
+09/02/2021 11:10:47 - INFO - training.Trainer -     weighted avg__support__level_2 = 2821
 */
 {
   "gpu": {
     "use": true,
-    "id": "2",
+    "id": "3",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -23,7 +24,7 @@ loss = 2.575510252846612
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "train.nezha_base_lr0.7e-4_ce_v2",
+    "exp_name": "train.nezha_base_lr0.7e-4_ce_v2_fgm",
     "task": "daguan",
     "model_type": "nezha_base",
     "model_encoder_type": "nezha",
@@ -74,7 +75,7 @@ loss = 2.575510252846612
     "use_lstm": true,
     "aggregator": "bert_pooler,dr_pooler,slf_attn_pooler",
     "dropout": 0.15,
-    "use_fgm": false,
+    "use_fgm": true,
     "use_pgd": false
   },
   "encoder_params": {

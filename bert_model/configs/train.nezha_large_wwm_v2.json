@@ -1,16 +1,3 @@
-/*
-线上：0.52170734544
-
-loss = 2.575510252846612
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__f1-score__level_2 = 0.5323257686923674
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__precision__level_2 = 0.5433092793565473
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__recall__level_2 = 0.5547449039221721
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__support__level_2 = 2821
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__f1-score__level_2 = 0.6697822619742119
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__precision__level_2 = 0.6897326029522685
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__recall__level_2 = 0.6618220489188231
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__support__level_2 = 2821
-*/
 {
   "gpu": {
     "use": true,
@@ -23,9 +10,9 @@ loss = 2.575510252846612
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "train.nezha_base_lr0.7e-4_ce_v2",
+    "exp_name": "train.nezha_large_wwm_v2",
     "task": "daguan",
-    "model_type": "nezha_base",
+    "model_type": "nezha_large",
     "model_encoder_type": "nezha",
     "vocab_mapping": true,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
@@ -34,7 +21,7 @@ loss = 2.575510252846612
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",
     "label2freq_level_2": "label2freq_level_2.json",
-    "encoder_name_or_path": "/data2/pre-model/nezha/NEZHA-Base-WWM"
+    "encoder_name_or_path": "/data2/pre-model/nezha/NEZHA-Large-WWM"
   },
   "params": {
     "seed": 1234,
@@ -43,23 +30,23 @@ loss = 2.575510252846612
     "logging_steps": 200,
     "save_steps": 200,
     "max_steps": -1,
-    "patience": 12,
+    "patience": 6,
     "print_epoch_interval": 5,
     "lr": {
       "lr": 5e-5,
-      "linear_lr": 5e-4,
-      "encoder_learning_rate": 0.5e-4,
+      "linear_lr": 9e-4,
+      "encoder_learning_rate": 0.9e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.5e-4
+      "embeddings_learning_rate": 0.9e-4
     },
     "schedule": {
       "weight_decay": 0.0,
       "warmup_steps": 200,
       "max_grad_norm": 1.0,
       "num_train_epochs": 50,
-      "per_gpu_train_batch_size": 32,
+      "per_gpu_train_batch_size": 64,
       "gradient_accumulation_steps": 1,
-      "eval_batch_size": 64
+      "eval_batch_size": 2
     },
     "loss": {
       "loss_fct_name": "ce",
@@ -78,7 +65,7 @@ loss = 2.575510252846612
     "use_pgd": false
   },
   "encoder_params": {
-    "max_seq_len": 133,
+    "max_seq_len": 132,
     "do_lower_case": true
   }
 }

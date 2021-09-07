@@ -1,16 +1,3 @@
-/*
-线上：0.52170734544
-
-loss = 2.575510252846612
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__f1-score__level_2 = 0.5323257686923674
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__precision__level_2 = 0.5433092793565473
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__recall__level_2 = 0.5547449039221721
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__support__level_2 = 2821
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__f1-score__level_2 = 0.6697822619742119
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__precision__level_2 = 0.6897326029522685
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__recall__level_2 = 0.6618220489188231
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__support__level_2 = 2821
-*/
 {
   "gpu": {
     "use": true,
@@ -23,7 +10,7 @@ loss = 2.575510252846612
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "train.nezha_base_lr0.7e-4_ce_v2",
+    "exp_name": "train.nezha_base_wwm_dice_supconloss_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi__v3",
     "task": "daguan",
     "model_type": "nezha_base",
     "model_encoder_type": "nezha",
@@ -37,48 +24,59 @@ loss = 2.575510252846612
     "encoder_name_or_path": "/data2/pre-model/nezha/NEZHA-Base-WWM"
   },
   "params": {
-    "seed": 1234,
+    "seed": 41,
     "max_time": 24,
     "metric_key_for_early_stop": "macro avg__f1-score__level_2",
-    "logging_steps": 200,
+    "logging_steps": 400,
     "save_steps": 200,
     "max_steps": -1,
-    "patience": 12,
+    "patience": 6,
     "print_epoch_interval": 5,
     "lr": {
-      "lr": 5e-5,
-      "linear_lr": 5e-4,
-      "encoder_learning_rate": 0.5e-4,
+      "lr": 7e-5,
+      "linear_lr": 7e-4,
+      "encoder_learning_rate": 0.7e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.5e-4
+      "embeddings_learning_rate": 0.7e-4
     },
     "schedule": {
       "weight_decay": 0.0,
       "warmup_steps": 200,
       "max_grad_norm": 1.0,
       "num_train_epochs": 50,
-      "per_gpu_train_batch_size": 32,
+      "per_gpu_train_batch_size": 64,
       "gradient_accumulation_steps": 1,
       "eval_batch_size": 64
     },
     "loss": {
-      "loss_fct_name": "ce",
+      "loss_fct_name": "dice",
       "use_focal_loss": true,
       "focal_loss_gamma": 2.0,
       "use_class_weights": true,
-      "use_weighted_sampler": false
+      "use_weighted_sampler": false,
+      "contrastive_loss": "supconloss",
+      "what_to_contrast": "sample_and_class_embeddings",
+      "contrastive_temperature": 0.5,
+      "contrastive_loss_weight": 0.1
     }
   },
   "net_params": {
     "hidden_dim": 768,
     "use_lstm": true,
-    "aggregator": "bert_pooler,dr_pooler,slf_attn_pooler",
-    "dropout": 0.15,
+    "use_gru": true,
+    "aggregator": "bert_pooler,dr_pooler",
+    "dropout": 0.4,
+    "use_ms_dropout": true,
+    "dropout_num": 4,
+    "ms_average": false,
     "use_fgm": false,
+    "use_freelb": false,
+    "use_multi_task": true,
+    "use_hongfan": false,
     "use_pgd": false
   },
   "encoder_params": {
-    "max_seq_len": 133,
+    "max_seq_len": 132,
     "do_lower_case": true
   }
 }

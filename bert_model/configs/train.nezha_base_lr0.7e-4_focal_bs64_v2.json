@@ -1,3 +1,15 @@
+/*
+accuracy__level_2 = 0.65225097483162
+09/01/2021 19:22:07 - INFO - training.Trainer -     loss = 2.652402390374078
+09/01/2021 19:22:07 - INFO - training.Trainer -     macro avg__f1-score__level_2 = 0.5282715339747505
+09/01/2021 19:22:07 - INFO - training.Trainer -     macro avg__precision__level_2 = 0.5330175859788591
+09/01/2021 19:22:07 - INFO - training.Trainer -     macro avg__recall__level_2 = 0.5463543857303094
+09/01/2021 19:22:07 - INFO - training.Trainer -     macro avg__support__level_2 = 2821
+09/01/2021 19:22:07 - INFO - training.Trainer -     weighted avg__f1-score__level_2 = 0.6591196845328393
+09/01/2021 19:22:07 - INFO - training.Trainer -     weighted avg__precision__level_2 = 0.671351131999685
+09/01/2021 19:22:07 - INFO - training.Trainer -     weighted avg__recall__level_2 = 0.65225097483162
+09/01/2021 19:22:07 - INFO - training.Trainer -     weighted avg__support__level_2 = 2821
+*/
 {
   "gpu": {
     "use": true,
@@ -33,7 +45,7 @@
     "patience": 6,
     "print_epoch_interval": 5,
     "lr": {
-      "init_lr": 0.0005,
+      "lr": 5e-5,
       "linear_lr": 7e-4,
       "encoder_learning_rate": 0.7e-4,
       "min_lr": 1e-6,
@@ -58,7 +70,7 @@
   "net_params": {
     "hidden_dim": 768,
     "use_lstm": true,
-    "aggregator": "bert_pooler",
+    "aggregator": "bert_pooler,dr_pooler,slf_attn_pooler",
     "dropout": 0.15,
     "use_fgm": false,
     "use_pgd": false

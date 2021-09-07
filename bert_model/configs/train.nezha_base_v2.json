@@ -1,3 +1,17 @@
+/*
+线上：0.52964435656
+
+accuracy__level_2 = 0.6728110599078341
+09/01/2021 21:28:33 - INFO - training.Trainer -     loss = 3.4885667986339994
+09/01/2021 21:28:33 - INFO - training.Trainer -     macro avg__f1-score__level_2 = 0.5286242339158032
+09/01/2021 21:28:33 - INFO - training.Trainer -     macro avg__precision__level_2 = 0.5316623469640888
+09/01/2021 21:28:33 - INFO - training.Trainer -     macro avg__recall__level_2 = 0.5490255551147767
+09/01/2021 21:28:33 - INFO - training.Trainer -     macro avg__support__level_2 = 2821
+09/01/2021 21:28:33 - INFO - training.Trainer -     weighted avg__f1-score__level_2 = 0.6807234840200452
+09/01/2021 21:28:33 - INFO - training.Trainer -     weighted avg__precision__level_2 = 0.6925788790087959
+09/01/2021 21:28:33 - INFO - training.Trainer -     weighted avg__recall__level_2 = 0.6728110599078341
+09/01/2021 21:28:33 - INFO - training.Trainer -     weighted avg__support__level_2 = 2821
+*/
 {
   "gpu": {
     "use": true,
@@ -33,7 +47,7 @@
     "patience": 6,
     "print_epoch_interval": 5,
     "lr": {
-      "init_lr": 0.0005,
+      "lr": 5e-5,
       "linear_lr": 5e-4,
       "encoder_learning_rate": 0.5e-4,
       "min_lr": 1e-6,
@@ -59,7 +73,7 @@
   "net_params": {
     "hidden_dim": 768,
     "use_lstm": true,
-    "aggregator": "bert_pooler",
+    "aggregator": "bert_pooler,dr_pooler,max_pooler",
     "dropout": 0.15,
     "use_fgm": false,
     "use_pgd": false

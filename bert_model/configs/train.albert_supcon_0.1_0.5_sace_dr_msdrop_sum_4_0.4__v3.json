@@ -1,20 +1,7 @@
-/*
-线上：0.52170734544
-
-loss = 2.575510252846612
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__f1-score__level_2 = 0.5323257686923674
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__precision__level_2 = 0.5433092793565473
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__recall__level_2 = 0.5547449039221721
-09/01/2021 20:33:04 - INFO - training.Trainer -     macro avg__support__level_2 = 2821
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__f1-score__level_2 = 0.6697822619742119
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__precision__level_2 = 0.6897326029522685
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__recall__level_2 = 0.6618220489188231
-09/01/2021 20:33:04 - INFO - training.Trainer -     weighted avg__support__level_2 = 2821
-*/
 {
   "gpu": {
     "use": true,
-    "id": "2",
+    "id": "0",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -23,27 +10,27 @@ loss = 2.575510252846612
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "train.nezha_base_lr0.7e-4_ce_v2",
+    "exp_name": "train.albert_base_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4__v3.json",
     "task": "daguan",
-    "model_type": "nezha_base",
-    "model_encoder_type": "nezha",
+    "model_type": "albert_base",
+    "model_encoder_type": "albert",
     "vocab_mapping": true,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
-    "data_dir": "splits/fold_0_nezha_base_vocab",
+    "data_dir": "splits/fold_0_albert_xxlarge_vocab",
     "label_file_level_1": "labels_level_1.txt",
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",
     "label2freq_level_2": "label2freq_level_2.json",
-    "encoder_name_or_path": "/data2/pre-model/nezha/NEZHA-Base-WWM"
+    "encoder_name_or_path": "/data2/pre-model/albert/albert_chinese_base"
   },
   "params": {
-    "seed": 1234,
+    "seed": 41,
     "max_time": 24,
     "metric_key_for_early_stop": "macro avg__f1-score__level_2",
-    "logging_steps": 200,
+    "logging_steps": 400,
     "save_steps": 200,
     "max_steps": -1,
-    "patience": 12,
+    "patience": 6,
     "print_epoch_interval": 5,
     "lr": {
       "lr": 5e-5,
@@ -66,19 +53,29 @@ loss = 2.575510252846612
       "use_focal_loss": true,
       "focal_loss_gamma": 2.0,
       "use_class_weights": true,
-      "use_weighted_sampler": false
+      "use_weighted_sampler": false,
+      "contrastive_loss": "supconloss",
+      "what_to_contrast": "sample_and_class_embeddings",
+      "contrastive_temperature": 0.5,
+      "contrastive_loss_weight": 0.1
     }
   },
   "net_params": {
     "hidden_dim": 768,
     "use_lstm": true,
-    "aggregator": "bert_pooler,dr_pooler,slf_attn_pooler",
-    "dropout": 0.15,
+    "aggregator": "bert_pooler,dr_pooler",
+    "dropout": 0.4,
+    "use_ms_dropout": true,
+    "dropout_num": 4,
+    "ms_average": false,
     "use_fgm": false,
+    "use_freelb": false,
+    "use_hongfan": true,
+    "use_multi_task": false,
     "use_pgd": false
   },
   "encoder_params": {
-    "max_seq_len": 133,
+    "max_seq_len": 132,
     "do_lower_case": true
   }
 }

@@ -1,7 +1,19 @@
+/*
+accuracy__level_2 = 0.65225097483162
+09/01/2021 19:22:07 - INFO - training.Trainer -     loss = 2.652402390374078
+09/01/2021 19:22:07 - INFO - training.Trainer -     macro avg__f1-score__level_2 = 0.5282715339747505
+09/01/2021 19:22:07 - INFO - training.Trainer -     macro avg__precision__level_2 = 0.5330175859788591
+09/01/2021 19:22:07 - INFO - training.Trainer -     macro avg__recall__level_2 = 0.5463543857303094
+09/01/2021 19:22:07 - INFO - training.Trainer -     macro avg__support__level_2 = 2821
+09/01/2021 19:22:07 - INFO - training.Trainer -     weighted avg__f1-score__level_2 = 0.6591196845328393
+09/01/2021 19:22:07 - INFO - training.Trainer -     weighted avg__precision__level_2 = 0.671351131999685
+09/01/2021 19:22:07 - INFO - training.Trainer -     weighted avg__recall__level_2 = 0.65225097483162
+09/01/2021 19:22:07 - INFO - training.Trainer -     weighted avg__support__level_2 = 2821
+*/
 {
   "gpu": {
     "use": true,
-    "id": "1",
+    "id": "2",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -24,16 +36,16 @@
     "encoder_name_or_path": "/data2/pre-model/nezha/NEZHA-Base-WWM"
   },
   "params": {
-    "seed": 1234,
+    "seed": 41,
     "max_time": 24,
     "metric_key_for_early_stop": "macro avg__f1-score__level_2",
-    "logging_steps": 400,
+    "logging_steps": 200,
     "save_steps": 200,
     "max_steps": -1,
     "patience": 6,
     "print_epoch_interval": 5,
     "lr": {
-      "init_lr": 0.0005,
+      "lr": 5e-5,
       "linear_lr": 7e-4,
       "encoder_learning_rate": 0.7e-4,
       "min_lr": 1e-6,
@@ -46,7 +58,7 @@
       "num_train_epochs": 50,
       "per_gpu_train_batch_size": 32,
       "gradient_accumulation_steps": 1,
-      "eval_batch_size": 64
+      "eval_batch_size": 2
     },
     "loss": {
       "loss_fct_name": "dice",
@@ -65,7 +77,7 @@
     "use_pgd": false
   },
   "encoder_params": {
-    "max_seq_len": 133,
+    "max_seq_len": 132,
     "do_lower_case": true
   }
 }
