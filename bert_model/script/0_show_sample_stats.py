@@ -17,6 +17,7 @@ def length_process(data_dir):
             sent_ = sent_.split(" ")
             tmp_x.append(len(sent_))
 
+        print(len(tmp_x))
         n, bins, patches = plt.hist(x=tmp_x, bins='auto', color='#0504aa',
                                     alpha=0.7, rwidth=0.85)
         plt.grid(axis='y', alpha=0.75)

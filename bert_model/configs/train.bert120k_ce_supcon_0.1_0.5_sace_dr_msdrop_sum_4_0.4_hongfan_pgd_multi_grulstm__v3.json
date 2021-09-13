@@ -54,7 +54,7 @@
       "focal_loss_gamma": 2.0,
       "use_class_weights": true,
       "use_weighted_sampler": false,
-      "contrastive_loss": "supconloss",
+      "contrastive_loss": "None",
       "what_to_contrast": "sample_and_class_embeddings",
       "contrastive_temperature": 0.5,
       "contrastive_loss_weight": 0.1

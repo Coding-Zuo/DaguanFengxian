@@ -94,11 +94,11 @@ def convert_tf_checkpoint_to_pytorch(tf_checkpoint_path, bert_config_file, pytor
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tf_checkpoint_path", default="/data2/pre-model/nezha/NEZHA-Base-WWM/model.ckpt", type=str,
+    parser.add_argument("--tf_checkpoint_path", default="/data2/pre-model/nezha/NEZHA-Large-WWM/model.ckpt", type=str,
                         help="Path to tf checkpoint")
-    parser.add_argument("--bert_config_file", default="/data2/pre-model/nezha/NEZHA-Base-WWM/bert_config.json",
+    parser.add_argument("--bert_config_file", default="/data2/pre-model/nezha/NEZHA-Large-WWM/bert_config.json",
                         type=str, help="The config file")
-    parser.add_argument("--pytorch_dump_path", default="/data2/pre-model/nezha/NEZHA-Base-WWM/pytorch_model.bin",
+    parser.add_argument("--pytorch_dump_path", default="/data2/pre-model/nezha/NEZHA-Large-WWM/pytorch_model.bin",
                         type=str,
                         help="Path to the output pytorch model")
 
