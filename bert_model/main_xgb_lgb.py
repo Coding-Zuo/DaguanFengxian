@@ -97,7 +97,6 @@ trainer = Trainer(
     test_sample_weights=test_sample_weights,
 )
 
-trainer.train()
-trainer.load_model()
-trainer.evaluate("dev")
-trainer.evaluate("test")
+trainer.tree_model_cls('train', 'xgb')
+trainer.tree_model_cls('dev', 'xgb')
+trainer.tree_model_cls('test', 'xgb')

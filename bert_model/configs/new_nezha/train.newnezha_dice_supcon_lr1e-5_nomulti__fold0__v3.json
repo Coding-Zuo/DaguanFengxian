@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "0",
+    "id": "1",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,7 +10,7 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "final_ensemble/train.newnezha_dice_supcon_lr1e-5_nomulti_pgd__fold0__v3",
+    "exp_name": "final_ensemble/train.newnezha_dice_supcon_lr5e-5_nomulti__fold0__v3",
     "task": "daguan",
     "model_type": "new_nezha",
     "model_encoder_type": "nezha",
@@ -30,14 +30,14 @@
     "logging_steps": 400,
     "save_steps": 200,
     "max_steps": -1,
-    "patience": 6,
+    "patience": 12,
     "print_epoch_interval": 5,
     "lr": {
       "lr": 5e-5,
-      "linear_lr": 2e-4,
-      "encoder_learning_rate": 0.1e-4,
+      "linear_lr": 5e-4,
+      "encoder_learning_rate": 0.5e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.1e-4
+      "embeddings_learning_rate": 0.5e-4
     },
     "schedule": {
       "weight_decay": 0.0,
@@ -74,7 +74,7 @@
     "use_freelb": false,
     "use_swa": false,
     "use_multi_task": false,
-    "use_pgd": true
+    "use_pgd": false
   },
   "encoder_params": {
     "max_seq_len": 132,

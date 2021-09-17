@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "1",
+    "id": "3",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,7 +10,7 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "new_ensemble/train.bert150k_ce_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold0__v3",
+    "exp_name": "new_ensemble/train.bert150k_ce_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold0_lr2e-5__v3",
     "task": "daguan",
     "model_type": "bert_base",
     "model_encoder_type": "bert",
@@ -35,9 +35,9 @@
     "lr": {
       "lr": 5e-5,
       "linear_lr": 5e-4,
-      "encoder_learning_rate": 0.5e-4,
+      "encoder_learning_rate": 0.7e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.5e-4
+      "embeddings_learning_rate": 0.7e-4
     },
     "schedule": {
       "weight_decay": 0.0,
@@ -49,7 +49,7 @@
       "eval_batch_size": 64
     },
     "loss": {
-      "loss_fct_name": "dice",
+      "loss_fct_name": "ce",
       "use_focal_loss": true,
       "focal_loss_gamma": 2.0,
       "use_class_weights": false,

@@ -1,11 +1,12 @@
 # -*- coding:utf-8 -*-
-# -*- coding:utf-8 -*-
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.model_utils import get_embedding_matrix_and_vocab, replace_masked_values
 from models.model_utils import get_sinusoid_encoding_table, masked_softmax, weighted_sum
+from torch.nn.utils import rnn
+from torch.autograd import Variable
 
 
 #########################################################################
@@ -20,6 +21,31 @@ class Classifier(nn.Module):
     def forward(self, x):
         x = self.dropout(x)
         return self.linear(x)
+
+
+class MultiSampleClassifier(nn.Module):
+    def __init__(self, args, input_dim, num_labels=2):
+        super(MultiSampleClassifier, self).__init__()
+        self.args = args
+        self.linear = nn.Linear(input_dim, num_labels)
+        self.dropout_ops = nn.ModuleList([
+            nn.Dropout(args.dropout) for _ in range(self.args.dropout_num)
+        ])
+
+    def forward(self, x):
+        logits = None
+        for i, dropout_op in enumerate(self.dropout_ops):
+            if i == 0:
+                out = dropout_op(x)
+                logits = self.linear(out)
+            else:
+                temp_out = dropout_op(x)
+                temp_logits = self.linear(temp_out)
+                logits += temp_logits
+        # 相加还是取平均
+        if self.args.ms_average:
+            logits = logits / self.args.dropout_num
+        return logits
 
 
 #########################################################################
@@ -103,7 +129,7 @@ class DynamicRoutingAggregator(nn.Module):
         shared_info = shared_info.view(-1, num_tokens, self.out_cpas_num, self.out_caps_dim)
 
         assert len(mask.size()) == 2
-        mask_float = torch.unsqueeze(mask, dim=-1).to(torch.float32) # [bs, seq_len ,1]
+        mask_float = torch.unsqueeze(mask, dim=-1).to(torch.float32)  # [bs, seq_len ,1]
 
         B = torch.zeros([batch_size, num_tokens, self.out_cpas_num], dtype=torch.float32).to(self.device)
 
@@ -217,9 +243,30 @@ class BiLSTMEncoder(nn.Module):
         self.LayerNorm = nn.LayerNorm(self.args.hidden_dim)
 
     def forward(self, input_tensors=None, attention_mask=None, position_ids=None, **kwargs):
+        input_tensors = self.LayerNorm(input_tensors)
         output_tensors = self.op(input_tensors)
         output_tensors = self.dropout(output_tensors)
-        output_tensors = self.LayerNorm(output_tensors)
+        return output_tensors
+
+
+class BiGRUEncoder(nn.Module):
+    def __init__(self, args):
+        super(BiGRUEncoder, self).__init__()
+        self.args = args
+
+        self.op = RnnEncoder(
+            self.args.hidden_dim,
+            self.args.hidden_dim,
+            rnn_name="gru",
+            bidirectional=True
+        )
+        self.dropout = nn.Dropout(p=args.dropout)
+        self.LayerNorm = nn.LayerNorm(self.args.hidden_dim)
+
+    def forward(self, input_tensors=None, attention_mask=None, position_ids=None, **kwargs):
+        input_tensors = self.LayerNorm(input_tensors)
+        output_tensors = self.op(input_tensors)
+        output_tensors = self.dropout(output_tensors)
         return output_tensors
 
 
@@ -247,6 +294,53 @@ class RnnEncoder(nn.Module):
     def forward(self, input_tensors, mask=None):
         encoded_output, _ = self._rnn(input_tensors)
         return encoded_output
+
+
+class LSTMWrapper(nn.Module):
+    def __init__(self, input_dim, hidden_dim, n_layer, concat=False, bidir=True, dropout=0.3, return_last=True):
+        super(LSTMWrapper, self).__init__()
+        self.rnns = nn.ModuleList()
+        for i in range(n_layer):
+            if i == 0:
+                input_dim_ = input_dim
+                output_dim_ = hidden_dim
+            else:
+                input_dim_ = hidden_dim if not bidir else hidden_dim * 2
+                output_dim_ = hidden_dim
+            self.rnns.append(nn.LSTM(input_dim_, output_dim_, 1, bidirectional=bidir, batch_first=True))
+        self.dropout = dropout
+        self.concat = concat
+        self.n_layer = n_layer
+        self.return_last = return_last
+
+    def forward(self, input, input_lengths=None):
+        # input_length must be in decreasing order
+        bsz, slen = input.size(0), input.size(1)
+        output = input
+        outputs = []
+
+        if input_lengths is not None:
+            lens = input_lengths.data.cpu().numpy()
+
+        for i in range(self.n_layer):
+            output = F.dropout(output, p=self.dropout, training=self.training)
+
+            if input_lengths is not None:
+                output = rnn.pack_padded_sequence(output, lens, batch_first=True)
+
+            output, _ = self.rnns[i](output)
+
+            if input_lengths is not None:
+                output, _ = rnn.pad_packed_sequence(output, batch_first=True)
+                if output.size(1) < slen:  # used for parallel
+                    padding = Variable(output.data.new(1, 1, 1).zero_())
+                    output = torch.cat([output, padding.expand(output.size(0), slen - output.size(1), output.size(2))],
+                                       dim=1)
+
+            outputs.append(output)
+        if self.concat:
+            return torch.cat(outputs, dim=2)
+        return outputs[-1]
 
 
 class ChildSepConv(nn.Module):

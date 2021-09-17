@@ -10,7 +10,7 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "final_ensemble/train.newnezha_dice_supcon_lr7e-5__fold0__v3",
+    "exp_name": "train.newnezha_dice_lr7e-5_fgm_drpooler__fold0__v3",
     "task": "daguan",
     "model_type": "new_nezha",
     "model_encoder_type": "nezha",
@@ -54,7 +54,7 @@
       "focal_loss_gamma": 2.0,
       "use_class_weights": false,
       "use_weighted_sampler": true,
-      "contrastive_loss": "supconloss",
+      "contrastive_loss": "None",
       "what_to_contrast": "sample_and_class_embeddings",
       "contrastive_temperature": 0.5,
       "contrastive_loss_weight": 0.1

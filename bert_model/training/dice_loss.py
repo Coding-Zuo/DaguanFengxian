@@ -90,11 +90,9 @@ class DiceLoss(nn.Module):
             loss = 1 - ((2 * interection + self.smooth) /
                         (flat_input.sum() + flat_target.sum() + self.smooth))
         else:
-            # loss = 1 - ((2 * interection + self.smooth) /
-            #             (torch.sum(torch.square(flat_input, ), -1) + torch.sum(torch.square(flat_target), -1) + self.smooth))
             loss = 1 - ((2 * interection + self.smooth) /
-                        (torch.sum(flat_input ** 2, -1) + torch.sum(flat_target ** 2, -1) + self.smooth))
-
+                        (torch.sum(torch.square(flat_input, ), -1) + torch.sum(torch.square(flat_target),
+                                                                               -1) + self.smooth))
         return loss
 
     def _multiple_class(self, input, target, logits_size, mask=None):
@@ -114,7 +112,7 @@ class DiceLoss(nn.Module):
             mask = torch.ones_like(target)
 
         loss = None
-        if self.ohem_ratio > 0:
+        if self.ohem_ratio > 0:  # 去考虑有难度的负例：模型预测错了还把这个标签的概率很大
             mask_neg = torch.logical_not(mask)
             for label_idx in range(logits_size):
                 # logits_size: 类别数
@@ -125,29 +123,33 @@ class DiceLoss(nn.Module):
 
                 pos_num = pos_example.sum()
                 neg_num = mask.sum() - (pos_num - (mask_neg & pos_example).sum())
-                keep_num = min(int(pos_num * self.ohem_ratio / logits_size), neg_num)
+                keep_num = min(int(pos_num * self.ohem_ratio / logits_size), neg_num)  #
 
                 if keep_num > 0:
                     # masked_select： 返回一个1-D tensor，根据flat_input对应于mask=1的部分的值返回
                     # 得到负样本对于本标签的打分
                     neg_scores = torch.masked_select(
-                        flat_input,
-                        neg_example.view(-1, 1).bool()
-                    ).view(-1, logits_size)
+                        flat_input,  # bs,c_num
+                        neg_example.view(-1, 1).bool()  # bs,1
+                    ).view(-1, logits_size)  # bs, c_num
                     neg_scores_idx = neg_scores[:, label_idx]
                     neg_scores_sort, _ = torch.sort(neg_scores_idx, )
-                    threshold = neg_scores_sort[-keep_num + 1]
+                    threshold = neg_scores_sort[-keep_num + 1]  # 筛选example的阈值条件
 
                     # 预测为本标签或者正确标签是本标签
-                    cond = (torch.argmax(flat_input, dim=1) == label_idx & flat_input[:,
-                                                                           label_idx] >= threshold) | pos_example.view(
-                        -1)
+                    # a = label_idx & flat_input[:, label_idx]
+                    # b = a == torch.argmax(flat_input, dim=1)
+                    # c = b >= threshold
+                    # cond = c | pos_example.view(-1)
+                    cond = ((torch.argmax(flat_input, dim=1) == label_idx) & (
+                                flat_input[:, label_idx] >= threshold)) | pos_example.view(-1)
+
                     ohem_mask_idx = torch.where(cond, 1, 0)
 
                     flat_input_idx = flat_input[:, label_idx]
                     flat_target_idx = flat_target[:, label_idx]
 
-                    flat_input_idx = flat_input_idx * ohem_mask_idx
+                    flat_input_idx = flat_input_idx * ohem_mask_idx  # 不符合的遮掩掉不计算loss
                     flat_target_idx = flat_target_idx * ohem_mask_idx
                 else:
                     flat_input_idx = flat_input[:, label_idx]

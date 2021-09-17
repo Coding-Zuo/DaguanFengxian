@@ -34,7 +34,7 @@ import torchsnooper
 from args_config import get_params
 from models.model_envs import MODEL_CLASSES
 from dataload.data_loader_bert import load_and_cache_examples
-from training.Trainer import Trainer
+from training.Trainer_v2 import Trainer
 import warnings
 
 warnings.filterwarnings("ignore")

@@ -188,7 +188,7 @@ def get_optimizer1(model, args, learning_rate):
 
     # embedding
     if args.model_encoder_type == "albert":
-        embedding_params = list(model.albert.embeddings.named_paramters())
+        embedding_params = list(model.albert.embeddings.named_parameters())
     else:
         embedding_params = list(model.bert.embeddings.named_parameters())
     no_decay = ['bias', 'LayerNorm.weight']
@@ -206,7 +206,7 @@ def get_optimizer1(model, args, learning_rate):
     ]
 
     # encoder+bert_pooler
-    if args.model_type == "albert":
+    if args.model_encoder_type == "albert":
         encoder_params = list(model.albert.encoder.named_parameters())
         if "bert_pooler" in model.aggregator_names:
             encoder_params = encoder_params + list(model.albert.pooler.named_parameters())

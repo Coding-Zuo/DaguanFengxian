@@ -41,6 +41,8 @@ from models.layers import *
 from training.focal_loss import FocalLoss
 from training.dice_loss import DiceLoss
 from models.file_utils import cached_path
+from pytorch_metric_learning.distances import DotProductSimilarity
+from pytorch_metric_learning.losses import NTXentLoss, SupConLoss
 
 CONFIG_NAME = 'bert_config.json'
 WEIGHTS_NAME = 'pytorch_model.bin'
@@ -174,26 +176,25 @@ class BertConfig(object):
             writer.write(self.to_json_string())
 
 
-try:
-    from apex.normalization.fused_layer_norm import FusedLayerNorm as BertLayerNorm
-except ImportError:
-    logger.info("Better speed can be achieved with apex installed from https://www.github.com/nvidia/apex .")
+# try:
+#     from apex.normalization.fused_layer_norm import FusedLayerNorm as BertLayerNorm
+# except ImportError:
+#     logger.info("Better speed can be achieved with apex installed from https://www.github.com/nvidia/apex .")
 
+class BertLayerNorm(nn.Module):
+    def __init__(self, hidden_size, eps=1e-12):
+        """Construct a layernorm module in the TF style (epsilon inside the square root).
+        """
+        super(BertLayerNorm, self).__init__()
+        self.weight = nn.Parameter(torch.ones(hidden_size))
+        self.bias = nn.Parameter(torch.zeros(hidden_size))
+        self.variance_epsilon = eps
 
-    class BertLayerNorm(nn.Module):
-        def __init__(self, hidden_size, eps=1e-12):
-            """Construct a layernorm module in the TF style (epsilon inside the square root).
-            """
-            super(BertLayerNorm, self).__init__()
-            self.weight = nn.Parameter(torch.ones(hidden_size))
-            self.bias = nn.Parameter(torch.zeros(hidden_size))
-            self.variance_epsilon = eps
-
-        def forward(self, x):
-            u = x.mean(-1, keepdim=True)
-            s = (x - u).pow(2).mean(-1, keepdim=True)
-            x = (x - u) / torch.sqrt(s + self.variance_epsilon)
-            return self.weight * x + self.bias
+    def forward(self, x):
+        u = x.mean(-1, keepdim=True)
+        s = (x - u).pow(2).mean(-1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.variance_epsilon)
+        return self.weight * x + self.bias
 
 
 class BertEmbeddings(nn.Module):
@@ -219,7 +220,7 @@ class BertEmbeddings(nn.Module):
     def forward(self, input_ids, token_type_ids=None):
         seq_length = input_ids.size(1)
         position_ids = torch.arange(seq_length, dtype=torch.long, device=input_ids.device)
-        position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+        position_ids = position_ids.unsqueeze(0).expand_as(input_ids) # torch.Size([32, 132])
         if token_type_ids is None:
             token_type_ids = torch.zeros_like(input_ids)
 
@@ -1168,6 +1169,8 @@ class ClsNezha(BertPreTrainedModel):
         self.lstm = None
         if self.args.use_lstm:
             self.lstm = BiLSTMEncoder(args)
+        if self.args.use_gru:
+            self.gru = BiLSTMEncoder(args)
 
         # aggregator 层: 默认使用 BertPooler，如果指定用其他的aggregator，则添加
         self.aggregator_names = self.args.aggregator.split(",")
@@ -1187,11 +1190,19 @@ class ClsNezha(BertPreTrainedModel):
         #     input_dim=self.args.hidden_size * len(self.aggregator_names),
         #     num_labels=self.num_labels_level_1,
         # )
-        self.classifier_level_2 = Classifier(
-            args,
-            input_dim=self.args.hidden_size,
-            num_labels=self.num_labels_level_2,
-        )
+
+        if self.args.use_ms_dropout:
+            self.classifier_level_2 = MultiSampleClassifier(
+                args,
+                input_dim=self.args.hidden_size,
+                num_labels=self.num_labels_level_2,
+            )
+        else:
+            self.classifier_level_2 = Classifier(
+                args,
+                input_dim=self.args.hidden_size,
+                num_labels=self.num_labels_level_2,
+            )
 
         # class weights
         class_weights_level_1 = []
@@ -1203,9 +1214,7 @@ class ClsNezha(BertPreTrainedModel):
         else:
             class_weights_level_1 = [w for w in class_weights_level_1]
         print("class_weights_level_1: ", class_weights_level_1)
-        self.class_weights_level_1 = F.softmax(torch.FloatTensor(
-            class_weights_level_1
-        ).to(self.args.device))
+        self.class_weights_level_1 = F.softmax(torch.FloatTensor(class_weights_level_1).to(self.args.device))
 
         class_weights_level_2 = []
         for i, lab in enumerate(label_list_level_2):
@@ -1216,9 +1225,7 @@ class ClsNezha(BertPreTrainedModel):
         else:
             class_weights_level_2 = [w for w in class_weights_level_2]
         print("class_weights_level_2: ", class_weights_level_2)
-        self.class_weights_level_2 = F.softmax(torch.FloatTensor(
-            class_weights_level_2
-        ).to(self.args.device))
+        self.class_weights_level_2 = F.softmax(torch.FloatTensor(class_weights_level_2).to(self.args.device))
 
     def forward(self, input_ids,
                 attention_mask,
@@ -1279,22 +1286,33 @@ class ClsNezha(BertPreTrainedModel):
                 label_ids_level_2.view(-1)
             )
 
-            # if self.args.use_focal_loss:
-            #     loss_fct = FocalLoss(
-            #         self.num_labels_level_2,
-            #         alpha=self.class_weights_level_2,
-            #         gamma=self.args.focal_loss_gamma,
-            #         size_average=True
-            #     )
-            # elif self.args.use_class_weights:
-            #     loss_fct = nn.CrossEntropyLoss(weight=self.class_weights_level_2)
-            # else:
-            #     loss_fct = nn.CrossEntropyLoss()
-            #
-            # loss_level_2 = loss_fct(
-            #     logits_level_2.view(-1, self.num_labels_level_2),
-            #     label_ids_level_2.view(-1)
-            # )
+            # 基于对比学习的损失计算
+            if self.args.contrastive_loss is not None:
+                if self.args.contrastive_loss == "ntxent_loss":  # InfoNCE
+                    loss_fct_contrast = NTXentLoss(temperature=self.args.contrastive_temperature,
+                                                   distance=DotProductSimilarity())
+                elif self.args.contrastive_loss == "supconloss":
+                    loss_fct_contrast = SupConLoss(temperature=self.args.contrastive_temperature,
+                                                   distance=DotProductSimilarity())
+                else:
+                    raise ValueError("unsupported contrastive loss function: {}".format(self.args.contrastive_loss))
+
+                if self.args.what_to_contrast == "sample":  # batch中的数据
+                    embeddings = pooled_outputs
+                    labels = label_ids_level_2.view(-1)
+                elif self.args.what_to_contrast == "sample_and_class_embeddings":  # 把分类层的权重也加进来
+                    embeddings = torch.cat([pooled_outputs, self.classifier_level_2.linear.weight], dim=0)
+                    labels = torch.cat([label_ids_level_2.view(-1),
+                                        torch.arange(0, self.num_labels_level_2).to(self.args.device)], dim=-1)
+                else:
+                    raise ValueError("unsupported contrastive features: {}".format(self.args.what_to_contrast))
+
+                contra_loss_level_2 = loss_fct_contrast(embeddings, labels)
+                # logger.info("ce loss: {}; contrastive loss: {}".format(
+                #     loss_level_2, contra_loss_level_2
+                # ))
+                loss_level_2 = loss_level_2 + self.args.contrastive_loss_weight * contra_loss_level_2
+
             outputs = (loss_level_2,) + outputs
 
         return outputs

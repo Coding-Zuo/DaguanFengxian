@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "0",
+    "id": "1",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,13 +10,13 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "ensemble/train.bert120k_ce_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold3__v3",
+    "exp_name": "ensemble/train.bert120k_ce_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold4__v3",
     "task": "daguan",
     "model_type": "bert_base",
     "model_encoder_type": "bert",
     "vocab_mapping": false,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
-    "data_dir": "splits6/fold_3",
+    "data_dir": "splits6/fold_4",
     "label_file_level_1": "labels_level_1.txt",
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",

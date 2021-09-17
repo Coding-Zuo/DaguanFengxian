@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "1",
+    "id": "3",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -74,7 +74,8 @@
     "use_freelb": false,
     "use_swa": false,
     "use_multi_task": true,
-    "use_pgd": false
+    "use_pgd": false,
+    "emb_names": "word_embedding,encoder.layer.0"
   },
   "encoder_params": {
     "max_seq_len": 132,

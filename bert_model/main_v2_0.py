@@ -92,7 +92,9 @@ trainer = Trainer(
     test_sample_weights=test_sample_weights,
 )
 
-trainer.train()
+global_step, tr_loss, train_loss_all, dev_loss_all = trainer.train()
+print(train_loss_all)
+print(dev_loss_all)
 trainer.load_model()
 trainer.evaluate("dev")
 trainer.evaluate("test")

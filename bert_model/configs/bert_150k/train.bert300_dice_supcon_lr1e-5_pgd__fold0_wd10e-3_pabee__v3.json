@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "2",
+    "id": "3",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,10 +10,10 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "final_ensemble/train.bert300_dice_supcon_lr1e-5_pgd__fold0_wd10e-3__v3",
+    "exp_name": "final_ensemble/train.bert300_dice_supcon_lr1e-5_pgd__fold0_wd10e-3_pabee__v3",
     "task": "daguan",
     "model_type": "bert_base",
-    "model_encoder_type": "bert",
+    "model_encoder_type": "bert_pabee",
     "vocab_mapping": false,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
     "data_dir": "splits/fold_bert300_0",
@@ -33,11 +33,11 @@
     "patience": 6,
     "print_epoch_interval": 5,
     "lr": {
-      "lr": 5e-5,
-      "linear_lr": 5e-4,
-      "encoder_learning_rate": 0.1e-4,
+      "lr": 2e-5,
+      "linear_lr": 2e-4,
+      "encoder_learning_rate": 0.2e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.1e-4
+      "embeddings_learning_rate": 0.2e-4
     },
     "schedule": {
       "weight_decay": 10e-3,
@@ -64,20 +64,20 @@
     "hidden_dim": 768,
     "use_lstm": true,
     "use_gru": true,
-    "aggregator": "bert_pooler,dr_pooler",
+    "aggregator": "bert_pooler",
     "dropout": 0.4,
     "use_ms_dropout": true,
     "dropout_num": 4,
     "ms_average": false,
     "use_fgm": false,
-    "use_hongfan": true,
+    "use_hongfan": false,
     "use_freelb": false,
     "use_swa": false,
     "use_multi_task": false,
     "use_pgd": true
   },
   "encoder_params": {
-    "max_seq_len": 128,
+    "max_seq_len": 133,
     "do_lower_case": true
   }
 }

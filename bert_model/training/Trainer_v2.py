@@ -22,7 +22,8 @@ from dataload.data_loader_bert import get_labels
 from training.train_eval_optim import get_optimizer1, compute_metrics
 from models.model_envs import MODEL_CLASSES
 
-from training.Adversarial import FGM, PGD, getDelta, updateDelta, FreeLB, FGM1, PGD1
+from training.Adversarial import FGM, PGD, getDelta, updateDelta, FreeLB, FGM1, PGD1, FGM2, PGD2
+import random
 
 warnings.filterwarnings("ignore")
 
@@ -73,13 +74,15 @@ class Trainer(object):
         self.do_early_stop = False
 
         # Adv
-        if args.use_fgm:
-            self.fgm = FGM1(self.model)
-        # if args.use_freelb:
-        #     self.freelb = FreeLB()
-        if args.use_pgd:
-            self.K = 3
-            self.pgd = PGD(self.model)
+        self.adv_trainer = None
+        if self.args.use_fgm and self.args.use_pgd:
+            raise Exception("Adv methed !!!")
+        if self.args.use_fgm:
+            self.adv_trainer = FGM2(self.model, epsilon=self.args.epsilon_for_adv,
+                                    emb_names=self.args.emb_names.split(","))
+        if self.args.use_pgd:
+            self.adv_trainer = PGD2(self.model, epsilon=self.args.epsilon_for_adv,
+                                    alpha=self.args.alpha_for_adv, emb_names=self.args.emb_names.split(","))
 
     def train(self):
         if self.args.use_weighted_sampler:
@@ -101,6 +104,9 @@ class Trainer(object):
         #     optimizer = SWA(optimizer, swa_start=0, swa_freq=10, swa_lr=7e-5)
         scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=self.args.warmup_steps,
                                                     num_training_steps=t_total)
+
+        swa_model = torch.optim.swa_utils.AveragedModel(self.model)
+        swa_scheduler = torch.optim.swa_utils.SWALR(optimizer, swa_lr=0.05)
 
         # Train!
         logger.info("***** Running training *****")
@@ -160,30 +166,33 @@ class Trainer(object):
                     loss.backward()
 
                 # 对抗训练
-                # if self.args.use_freelb:
-                # if d.grad is not None:
-                #     delta_grad = d.grad.clone().detach()
-                #     d = updateDelta(d, delta_grad, embeds_init)
-                # embeds_init = self.model.bert.embeddings.word_embeddings(batch[0])
-
-                if self.args.use_fgm:
-                    self.fgm.attack()
-                    output_adv = self.model(**inputs)
-                    loss_adv = output_adv[0] / self.args.gradient_accumulation_steps
-                    loss_adv.backward()  # 反向传播，并在正常的grad基础上，累加对抗训练的梯度
-                    self.fgm.restore()  # 恢复embedding参数
-                if self.args.use_pgd:
-                    self.pgd.backup_grad()
-                    for t in range(self.K):
-                        self.pgd.attack(is_first_attack=(t == 0))  # 在embedding上添加对抗扰动, first attack时备份param.data
-                        if t != self.K - 1:
+                if self.adv_trainer is not None:
+                    if random.uniform(0, 1) <= self.args.adv_rate:  # 随机攻击
+                        if self.args.use_fgm:
+                            self.adv_trainer.backup_grad()
+                            # 实施对抗
+                            self.adv_trainer.attack()
+                            # 梯度清零，用于计算在对抗样本处的梯度
                             self.model.zero_grad()
-                        else:
-                            self.pgd.restore_grad()
-                        output_adv = self.model(**inputs)
-                        loss_adv = output_adv[0] / self.args.gradient_accumulation_steps
-                        loss_adv.backward()  # 反向传播，并在正常的grad基础上，累加对抗训练的梯度
-                    self.pgd.restore()  # 恢复embedding参数
+                            outputs_adv = self.model(**inputs)
+                            loss_adv = outputs_adv[0]
+                            loss_adv.backward()
+                            # embedding(被攻击的模块)的梯度回复原值，其他部分梯度累加，
+                            # 这样相当于综合了两步优化的方向
+                            self.adv_trainer.restore_grad()
+                            # 恢复embedding的参数
+                            self.adv_trainer.restore()
+                        elif self.args.use_pgd:
+                            self.adv_trainer.backup_grad()  # 保存正常的grad
+                            # 对抗训练
+                            for t in range(self.args.steps_for_adv):
+                                self.adv_trainer.attack(is_first_attack=(t == 0))
+                                self.model.zero_grad()
+                                outputs_adv = self.model(**inputs)
+                                loss_adv = outputs_adv[0]
+                                loss_adv.backward()
+                            self.adv_trainer.restore_grad()
+                            self.adv_trainer.restore()
 
                 tr_loss += loss.item()
                 if (step + 1) % self.args.gradient_accumulation_steps == 0:

@@ -49,11 +49,17 @@ def load_encoder_model(args, encoder_name_or_path, model_type):
 #     (tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, RobertaConfig, AlbertConfig)), ())
 
 from models.modeling_bert import ClsBERT
-from models.modeling_nezha import ClsNezha
+from models.modeling_albert import ClsALBERT
+from models.modeling_nezha1 import ClsNezha
+from models.modeling_bert_pabee import ClsBERTWithPABEE
+from models.modeling_nezha_pabee import ClsNezhaWithPABEE
 
 MODEL_CLASSES = {
     'bert': (BertConfig, ClsBERT, BertTokenizer),
+    'bert_pabee': (BertConfig, ClsBERTWithPABEE, BertTokenizer),
     'nezha': (BertConfig, ClsNezha, BertTokenizer),
+    'nezha_pabee': (BertConfig, ClsNezhaWithPABEE, BertTokenizer),
     'roberta': (RobertaConfig, RobertaModel, RobertaTokenizer),
-    'albert': (AlbertConfig, AlbertModel, BertTokenizer),
+    'albert': (AlbertConfig, ClsALBERT, BertTokenizer),
+    'macbert': (BertConfig, ClsBERT, BertTokenizer),
 }

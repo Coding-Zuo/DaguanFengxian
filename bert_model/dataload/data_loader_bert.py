@@ -33,8 +33,9 @@ class InputExample(object):
 
 
 class InputFeatures(object):
-    def __init__(self, input_ids, attention_mask, token_type_ids, label_id_level_1, label_id_level_2):
+    def __init__(self, input_ids, attention_mask, token_type_ids, label_id_level_1, label_id_level_2, id):
         self.input_ids = input_ids
+        self.id = id  ######################
         self.attention_mask = attention_mask
         self.token_type_ids = token_type_ids
         self.label_id_level_1 = label_id_level_1
@@ -88,7 +89,10 @@ class DaguanDataProcessor(object):
             line = line.split(sep)
 
             # id
-            id_ = line[0]
+            if set_type == "dev":  ######################
+                id_ = line[3]
+            else:
+                id_ = line[0]
             guid = "%s-%s" % (set_type, id_)
 
             # input_text
@@ -100,8 +104,10 @@ class DaguanDataProcessor(object):
                 label_level_1 = 0
                 label_level_2 = 0
             else:
-                if not len(line) == 3:
-                    print(line)
+                # if not len(line) == 4:
+                #     print(line)
+                # if not len(line) == 3:
+                #     print(line)
 
                 label_name = line[2]
                 label_name_level_1 = label_name.split("-")[0]
@@ -110,6 +116,8 @@ class DaguanDataProcessor(object):
                 label_level_1 = self.labels_level_1.index(label_name_level_1)
                 label_level_2 = self.labels_level_2.index(label_name_level_2)
 
+            # if set_type == "dev":
+            #     guid = line[-1]
             examples.append(InputExample(
                 guid=guid,
                 words=words,
@@ -188,6 +196,7 @@ def convert_examples_to_features(examples, max_seq_len, tokenizer,
                 token_type_ids=token_type_ids,
                 label_id_level_1=label_id_level_1,
                 label_id_level_2=label_id_level_2,
+                id=int(example.guid.split("-")[1]),  ######################
             )
         )
 
@@ -212,9 +221,9 @@ def load_and_cache_examples(args, tokenizer, mode):
     cached_features_file = os.path.join(args.data_dir, 'cached_{}_{}_{}_{}'.format(
         mode, args.task, args.model_type, args.max_seq_len))
     cached_sampling_weights_file = os.path.join(args.data_dir, 'cached_sampling_weights_{}_{}_{}_{}'.format(
-        mode, args.task, args.model_encoder_type, args.max_seq_len))
+        mode, args.task, args.model_type, args.max_seq_len))
 
-    if os.path.exists(cached_features_file):
+    if os.path.exists(cached_features_file) and os.path.exists(cached_sampling_weights_file):  ######################
         logger.info("Loading features from cached file %s", cached_features_file)
         features = torch.load(cached_features_file)
         sampling_weights = torch.load(cached_sampling_weights_file)
@@ -243,6 +252,7 @@ def load_and_cache_examples(args, tokenizer, mode):
     all_token_type_ids = torch.tensor([f.token_type_ids for f in features], dtype=torch.long)
     all_label_id_level_1s = torch.tensor([f.label_id_level_1 for f in features], dtype=torch.long)
     all_label_id_level_2s = torch.tensor([f.label_id_level_2 for f in features], dtype=torch.long)
+    all_id = torch.tensor([f.id for f in features], dtype=torch.long)  ######################
 
     dataset = TensorDataset(
         all_input_ids.to(args.device),
@@ -250,6 +260,7 @@ def load_and_cache_examples(args, tokenizer, mode):
         all_token_type_ids.to(args.device),
         all_label_id_level_1s.to(args.device),
         all_label_id_level_2s.to(args.device),
+        all_id.to(args.device),  ######################
     )
 
     return dataset, sampling_weights

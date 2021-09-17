@@ -66,11 +66,18 @@ new_nezha_4folds = [
     "4zhe/train.newnezha_dice_supcon_lr1e-5_nomulti_fgm__fold3__v3",
 ]
 
-new_nezha_4folds1 = [
-    "4zhe/train.newnezha_dice_supcon_lr1e-5_nomulti_fgm__fold0__v3",
-    "4zhe/train.newnezha_dice_supcon_lr1e-5_nomulti_fgm__fold1__v3",
-    "4zhe/train.newnezha_dice_supcon_lr1e-5_nomulti_fgm__fold2__v3",
-    "4zhe/train.newnezha_dice_supcon_lr1e-5_nomulti_fgm__fold3__v3",
+bert300_4folds = [
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold0__v3",
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold1__v3",
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold2__v3",
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold3__v3",
+]
+
+bert150k_4folds = [
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold0__v3",
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold1__v3",
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold2__v3",
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold3__v3",
 ]
 
 
@@ -169,13 +176,14 @@ for idx, model_kfolds in enumerate(all_model):
 # 给每个特征加标签，去train里找
 train_file = '/data2/code/DaguanFengxian/bert_model/data/datagrand_2021_train.csv'
 label_dict = {}
+true_labels = get_labels("/data2/code/DaguanFengxian/bert_model/data/labels_level_2.txt")
 with open(train_file, 'r', encoding='utf-8') as f:
     for i, line in enumerate(f):
         if i == 0:
             continue
         id_ = line.strip().split(",")[0]
         label_ = line.strip().split(",")[-1]
-        label_dict[id_] = label_
+        label_dict[int(id_)] = true_labels.index(label_)
 
 # 处理train_meta_prob{id: [id_prob_array1,id_prob_array2]}   test_meta_prob [prob_array1,prob_array2]
 train_meta_prob_new = None
@@ -188,9 +196,13 @@ for id_, prob_list in train_meta_prob.items():
         train_meta_prob_new = np.vstack((train_meta_prob_new, prob_list))
 
 # tocsv
-output_dir = " /data2/code/DaguanFengxian/bert_model/data/ensemble_data/"
+output_dir = "/data2/code/DaguanFengxian/bert_model/data/ensemble_data/"
 pd.DataFrame(train_meta_prob_new).to_csv(  # [14009, 35*k]
     os.path.join(output_dir, "train_meta_prob.csv"),
+    index=False,
+)
+pd.DataFrame(train_meta_label).to_csv(  # [14009, 35*k]
+    os.path.join(output_dir, "train_meta_label.csv"),
     index=False,
 )
 pd.DataFrame(test_meta_prob).to_csv(  # [6004,35*k]
@@ -205,7 +217,6 @@ import xgboost as xgb
 import lightgbm as lgb
 from sklearn.linear_model import LogisticRegression, LinearRegression
 
-true_labels = get_labels("/data2/code/DaguanFengxian/bert_model/data/labels_level_2.txt")
 xgb_cls = xgb.XGBClassifier(max_depth=6, learning_rate=0.05, n_estimators=100,
                             objective="multi:softprob", num_class=35,
                             subsample=0.8, colsample_bytree=0.8, tree_method='gpu_hist',

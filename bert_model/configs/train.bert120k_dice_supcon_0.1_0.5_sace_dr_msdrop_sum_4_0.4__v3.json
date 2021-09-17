@@ -14,9 +14,9 @@
     "task": "daguan",
     "model_type": "bert_base",
     "model_encoder_type": "bert",
-    "vocab_mapping": true,
+    "vocab_mapping": false,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
-    "data_dir": "splits/fold_0_bert_120k_vocab",
+    "data_dir": "splits6/fold_0",
     "label_file_level_1": "labels_level_1.txt",
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",
@@ -24,7 +24,7 @@
     "encoder_name_or_path": "/data2/code/DaguanFengxian/pretrain_weight/steps_120k"
   },
   "params": {
-    "seed": 1234,
+    "seed": 41,
     "max_time": 24,
     "metric_key_for_early_stop": "macro avg__f1-score__level_2",
     "logging_steps": 400,
@@ -34,22 +34,22 @@
     "print_epoch_interval": 5,
     "lr": {
       "lr": 5e-5,
-      "linear_lr": 5e-4,
-      "encoder_learning_rate": 0.5e-4,
+      "linear_lr": 7e-4,
+      "encoder_learning_rate": 0.7e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.5e-4
+      "embeddings_learning_rate": 0.7e-4
     },
     "schedule": {
       "weight_decay": 0.0,
       "warmup_steps": 400,
       "max_grad_norm": 1.0,
       "num_train_epochs": 50,
-      "per_gpu_train_batch_size": 16,
+      "per_gpu_train_batch_size": 64,
       "gradient_accumulation_steps": 1,
       "eval_batch_size": 64
     },
     "loss": {
-      "loss_fct_name": "dice",
+      "loss_fct_name": "ce",
       "use_focal_loss": true,
       "focal_loss_gamma": 2.0,
       "use_class_weights": false,
@@ -63,6 +63,7 @@
   "net_params": {
     "hidden_dim": 768,
     "use_lstm": true,
+    "use_gru": false,
     "aggregator": "bert_pooler,dr_pooler",
     "dropout": 0.4,
     "use_ms_dropout": true,

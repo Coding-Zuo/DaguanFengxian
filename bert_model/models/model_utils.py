@@ -34,7 +34,7 @@ def weighted_sum(matrix, attention):
     return intermediate.sum(dim=-2)
 
 
-def masked_softmax(vector, mask, dim, memory_efficient, mask_fill_value):
+def masked_softmax(vector, mask, dim=-1, memory_efficient=False, mask_fill_value=-1e32):
     if mask is None:
         result = torch.nn.functional.softmax(vector, dim=dim)
     else:
@@ -47,6 +47,7 @@ def masked_softmax(vector, mask, dim, memory_efficient, mask_fill_value):
             result = result * mask
             result = result / (result.sum(dim=dim, keepdim=True) + 1e-13)
         else:
+            # masked_vector = vector.masked_fill((1 - mask).bool(), mask_fill_value)
             masked_vector = vector.masked_fill((1 - mask).byte(), mask_fill_value)
             result = torch.nn.functional.softmax(masked_vector, dim=dim)
     return result

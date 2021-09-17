@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "2",
+    "id": "0",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,13 +10,13 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "new_ensemble/train.nezha_base_wwm_dice_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_hongfan_grulstm_fold2__v3",
+    "exp_name": "new_ensemble/train.nezha_base_wwm_dice_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_hongfan_grulstm_fold3__v3",
     "task": "daguan",
     "model_type": "nezha_base",
     "model_encoder_type": "nezha",
     "vocab_mapping": true,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
-    "data_dir": "splits/fold_2_nezha_base_vocab",
+    "data_dir": "splits/fold_3_nezha_base_vocab",
     "label_file_level_1": "labels_level_1.txt",
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",
@@ -34,17 +34,17 @@
     "print_epoch_interval": 5,
     "lr": {
       "lr": 5e-5,
-      "linear_lr": 7e-4,
-      "encoder_learning_rate": 0.7e-4,
+      "linear_lr": 5e-4,
+      "encoder_learning_rate": 0.5e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.7e-4
+      "embeddings_learning_rate": 0.5e-4
     },
     "schedule": {
       "weight_decay": 0.0,
       "warmup_steps": 400,
       "max_grad_norm": 1.0,
       "num_train_epochs": 50,
-      "per_gpu_train_batch_size": 64,
+      "per_gpu_train_batch_size": 32,
       "gradient_accumulation_steps": 1,
       "eval_batch_size": 64
     },

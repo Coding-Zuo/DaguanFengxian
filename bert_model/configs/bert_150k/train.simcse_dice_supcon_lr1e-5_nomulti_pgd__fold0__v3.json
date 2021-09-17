@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "1",
+    "id": "0",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -21,7 +21,7 @@
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",
     "label2freq_level_2": "label2freq_level_2.json",
-    "encoder_name_or_path": "/data2/code/DaguanFengxian/pretrain_weight/bert_300"
+    "encoder_name_or_path": "/data2/code/DaguanFengxian/pretrain_weight/daguan_task_sup_0911"
   },
   "params": {
     "seed": 41,
@@ -40,7 +40,7 @@
       "embeddings_learning_rate": 0.1e-4
     },
     "schedule": {
-      "weight_decay": 0.0,
+      "weight_decay": 10e-3,
       "warmup_steps": 200,
       "max_grad_norm": 1.0,
       "num_train_epochs": 50,
@@ -77,7 +77,7 @@
     "use_pgd": true
   },
   "encoder_params": {
-    "max_seq_len": 128,
+    "max_seq_len": 133,
     "do_lower_case": true
   }
 }

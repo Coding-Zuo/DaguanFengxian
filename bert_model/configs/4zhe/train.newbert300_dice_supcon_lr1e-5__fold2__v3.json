@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "1",
+    "id": "2",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,13 +10,13 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold1__v3",
+    "exp_name": "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold2__v3",
     "task": "daguan",
     "model_type": "new_bert",
     "model_encoder_type": "bert",
     "vocab_mapping": false,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
-    "data_dir": "splits_quchong1/fold_1",
+    "data_dir": "splits_quchong1/fold_2",
     "label_file_level_1": "labels_level_1.txt",
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",
@@ -34,10 +34,10 @@
     "print_epoch_interval": 5,
     "lr": {
       "lr": 2e-5,
-      "linear_lr": 1e-4,
-      "encoder_learning_rate": 0.1e-4,
+      "linear_lr": 2e-4,
+      "encoder_learning_rate": 0.2e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.1e-4
+      "embeddings_learning_rate": 0.2e-4
     },
     "schedule": {
       "weight_decay": 0.0,
@@ -65,7 +65,7 @@
     "use_lstm": true,
     "use_gru": true,
     "aggregator": "bert_pooler",
-    "dropout": 0.4,
+    "dropout": 0.15,
     "use_ms_dropout": true,
     "dropout_num": 4,
     "ms_average": false,

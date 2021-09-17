@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "0",
+    "id": "3",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -64,7 +64,7 @@
     "hidden_dim": 768,
     "use_lstm": true,
     "use_gru": true,
-    "aggregator": "bert_pooler,dr_pooler",
+    "aggregator": "bert_pooler",
     "dropout": 0.4,
     "use_ms_dropout": true,
     "dropout_num": 4,

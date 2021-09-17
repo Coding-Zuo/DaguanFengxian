@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "3",
+    "id": "0",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,7 +10,7 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "4zhe/train.newbert300_dice_supcon_lr1e-5_pgd__fold0__v4",
+    "exp_name": "4zhe/train.newbert300_dice_supcon_lr1e-5_pgd__fold0__v3",
     "task": "daguan",
     "model_type": "new_bert",
     "model_encoder_type": "bert",

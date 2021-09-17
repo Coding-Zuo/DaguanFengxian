@@ -102,7 +102,7 @@ def get_params():
                         help="If > 0: set total number of training steps to perform. Override num_train_epochs.")
     parser.add_argument('--print_epoch_interval', help="Please give a value for print_epoch_interval")
     # # lr
-    parser.add_argument('--init_lr', help="Please give a value for init_lr")
+    parser.add_argument('--lr', help="Please give a value for lr")
     parser.add_argument('--linear_lr', help="Please give a value for linear_lr")
     parser.add_argument('--encoder_learning_rate', help="Please give a value for encoder_learning_rate")
     parser.add_argument('--min_lr', help="Please give a value for min_lr")
@@ -120,6 +120,10 @@ def get_params():
                                                               "(1) 'ce', cross entropy loss; "
                                                               "(2) 'focal', focal loss; "
                                                               "(3) 'dice', dice loss;")
+    parser.add_argument("--use_focal_loss", default=True)
+    parser.add_argument("--focal_loss_gamma", type=float, default=2.0)
+    parser.add_argument("--use_class_weights", default=True)
+    parser.add_argument("--use_weighted_sampler", default=True)
     parser.add_argument("--contrastive_loss", default=True, help="which contrastive loss to use: "
                                                                  "(1) 'ntxent_loss';"
                                                                  "(2) 'supconloss';")
@@ -128,17 +132,24 @@ def get_params():
                                                                  "(2) 'sample_and_class_embeddings';")
     parser.add_argument("--contrastive_loss_weight", default=True, help="loss weight for ntxent")
     parser.add_argument("--contrastive_temperature", default=True, help="temperature for contrastive loss")
-    parser.add_argument("--use_focal_loss", default=True)
-    parser.add_argument("--focal_loss_gamma", type=float, default=2.0)
-    parser.add_argument("--use_class_weights", default=True)
-    parser.add_argument("--use_weighted_sampler", default=True)
     # gt_params
+    parser.add_argument('--use_ms_dropout', help="Please give a value for use_ms_dropout")
+    parser.add_argument('--ms_average', help="Please give a value for ms_average")
+    parser.add_argument('--dropout_num', help="Please give a value for dropout_num")
     parser.add_argument('--use_lstm', help="Please give a value for use_lstm")
     parser.add_argument('--aggregator', help="Please give a value for aggregator_names")
     parser.add_argument('--hidden_dim', help="Please give a value for hidden_dim")
     parser.add_argument('--dropout', help="Please give a value for dropout")
+    parser.add_argument('--use_hongfan', help="Please give a value for use_hongfan")
     parser.add_argument('--use_fgm', help="Please give a value for use_fgm")
+    parser.add_argument('--epsilon_for_adv', help="Please give a value for use_fgm")
+    parser.add_argument('--adv_rate', help="Please give a value for use_fgm")
+    parser.add_argument('--alpha_for_adv', help="Please give a value for use_fgm")
+    parser.add_argument('--steps_for_adv', help="Please give a value for use_fgm")
     parser.add_argument('--use_pgd', help="Please give a value for use_pgd")
+    parser.add_argument('--use_freelb', help="Please give a value for use_freelb")
+    parser.add_argument('--use_multi_task', help="Please give a value for use_freelb")
+    parser.add_argument("--emb_names", default="word_embedding,encoder.layer.0", help="word_embedding,encoder.layer.0")
     # encoder_params
     parser.add_argument('--max_seq_len', help="Please give a value for max_seq_length")
     parser.add_argument('--do_lower_case', help="Please give a value for do_lower_case")
@@ -226,8 +237,8 @@ def get_params():
     if args.print_epoch_interval is not None:
         params['print_epoch_interval'] = float(args.print_epoch_interval)
     # # lr
-    if args.init_lr is not None:
-        params['init_lr'] = float(args.init_lr)
+    if args.lr is not None:
+        params['lr'] = float(args.lr)
     if args.linear_lr is not None:
         params['linear_lr'] = float(args.linear_lr)
     if args.encoder_learning_rate is not None:
@@ -262,21 +273,53 @@ def get_params():
         params['use_class_weights'] = True if args.use_class_weights == 'True' else False
     if args.use_weighted_sampler is not None:
         params['use_weighted_sampler'] = True if args.use_weighted_sampler == 'True' else False
+    if args.contrastive_loss is not None:
+        params['contrastive_loss'] = args.contrastive_loss
+    if args.what_to_contrast is not None:
+        params['what_to_contrast'] = args.what_to_contrast
+    if args.contrastive_temperature is not None:
+        params['contrastive_temperature'] = float(args.contrastive_temperature)
+    if args.contrastive_loss_weight is not None:
+        params['contrastive_loss_weight'] = float(args.contrastive_loss_weight)
 
     # net parameters
     net_params = config['net_params']
     if args.use_lstm is not None:
         net_params['use_lstm'] = True if args.use_lstm == 'True' else False
+    if args.ms_average is not None:
+        net_params['ms_average'] = True if args.ms_average == 'True' else False
     if args.aggregator is not None:
         net_params['aggregator'] = args.aggregator
     if args.hidden_dim is not None:
         net_params['hidden_dim'] = args.hidden_dim
     if args.dropout is not None:
         net_params['dropout'] = float(args.dropout)
+    if args.dropout_num is not None:
+        net_params['dropout_num'] = int(args.dropout_num)
+    if args.use_ms_dropout is not None:
+        net_params['ms_average'] = True if args.ms_average == 'True' else False
+    if args.ms_average is not None:
+        net_params['use_ms_dropout'] = True if args.use_ms_dropout == 'True' else False
+    if args.use_hongfan is not None:
+        net_params['use_hongfan'] = True if args.use_hongfan == 'True' else False
     if args.use_fgm is not None:
         net_params['use_fgm'] = True if args.use_fgm == 'True' else False
+    if args.epsilon_for_adv is not None:
+        net_params['epsilon_for_adv'] = float(args.epsilon_for_adv)
+    if args.adv_rate is not None:
+        net_params['adv_rate'] = float(args.adv_rate)
+    if args.alpha_for_adv is not None:
+        net_params['alpha_for_adv'] = float(args.alpha_for_adv)
+    if args.steps_for_adv is not None:
+        net_params['steps_for_adv'] = int(args.steps_for_adv)
     if args.use_pgd is not None:
         net_params['use_pgd'] = True if args.use_pgd == 'True' else False
+    if args.use_freelb is not None:
+        net_params['use_freelb'] = True if args.use_freelb == 'True' else False
+    if args.use_multi_task is not None:
+        net_params['use_multi_task'] = True if args.use_multi_task == 'True' else False
+    if args.emb_names is not None:
+        net_params['emb_names'] = args.emb_names
 
     encoder_params = config['encoder_params']
     if args.max_seq_len is not None:

@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "3",
+    "id": "1",
 
     "local_rank": -1,
     "data_parallel": false
@@ -11,7 +11,7 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "train.nezha_base_wwm_dice_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_fgm_grulstm__v3",
+    "exp_name": "train.nezha_base_wwm_dice_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_hongfan_fgm_grulstm__v3",
     "task": "daguan",
     "model_type": "nezha_base",
     "model_encoder_type": "nezha",
@@ -71,7 +71,7 @@
     "ms_average": false,
     "use_fgm": true,
     "use_freelb": false,
-    "use_multi_task": true,
+    "use_multi_task": false,
     "use_gru": true,
     "use_hongfan": true,
     "use_pgd": false

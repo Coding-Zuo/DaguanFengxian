@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "2",
+    "id": "3",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,13 +10,13 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "ensemble/train.nezha_base_wwm_dice_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold3__v3",
+    "exp_name": "ensemble/train.nezha_base_wwm_dice_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold4__v3",
     "task": "daguan",
     "model_type": "nezha_base",
     "model_encoder_type": "nezha",
     "vocab_mapping": true,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
-    "data_dir": "splits6/fold_3_nezha_base_vocab",
+    "data_dir": "splits6/fold_4_nezha_base_vocab",
     "label_file_level_1": "labels_level_1.txt",
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",
@@ -72,7 +72,7 @@
     "use_fgm": false,
     "use_freelb": false,
     "use_hongfan": true,
-    "use_multi_task": true,
+    "use_multi_task": false,
     "use_pgd": false
   },
   "encoder_params": {

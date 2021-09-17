@@ -5,17 +5,24 @@ import os
 import time
 import warnings
 
+import xgboost as xgb
+import lightgbm as lgb
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, WeightedRandomSampler
 from tqdm import tqdm, trange
+from sklearn.metrics import classification_report
 from transformers import AdamW, get_polynomial_decay_schedule_with_warmup, \
     get_cosine_schedule_with_warmup, \
     get_cosine_with_hard_restarts_schedule_with_warmup
+from torchcontrib.optim import SWA
+from collections import defaultdict
 
 from dataload.data_loader_bert import get_labels
 from training.train_eval_optim import get_optimizer1, compute_metrics
 from models.model_envs import MODEL_CLASSES
+
+from training.Adversarial import FGM, PGD, getDelta, updateDelta, FreeLB, FGM1, PGD1
 
 warnings.filterwarnings("ignore")
 
@@ -65,6 +72,15 @@ class Trainer(object):
         self.early_stopping_counter = 0
         self.do_early_stop = False
 
+        # Adv
+        if args.use_fgm:
+            self.fgm = FGM1(self.model)
+        # if args.use_freelb:
+        #     self.freelb = FreeLB()
+        if args.use_pgd:
+            self.K = 3
+            self.pgd = PGD1(self.model)
+
     def train(self):
         if self.args.use_weighted_sampler:
             train_sampler = WeightedRandomSampler(self.train_sample_weights, len(self.train_sample_weights))
@@ -80,7 +96,9 @@ class Trainer(object):
         else:
             t_total = len(train_dataloader) // self.args.gradient_accumulation_steps * self.args.num_train_epochs
 
-        optimizer = get_optimizer1(self.model, self.args, self.args.encoder_learning_rate)
+        optimizer = get_optimizer1(self.model, self.args, self.args.lr)
+        # if self.args.use_swa:
+        #     optimizer = SWA(optimizer, swa_start=0, swa_freq=10, swa_lr=7e-5)
         scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=self.args.warmup_steps,
                                                     num_training_steps=t_total)
 
@@ -100,11 +118,20 @@ class Trainer(object):
 
         train_iterator = trange(int(self.args.num_train_epochs), desc="Epoch")
 
-        for _ in train_iterator:
+        train_loss_all = []
+        dev_loss_all = []
+        swa_flag = False
+        for epoch in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration")
             for step, batch in enumerate(epoch_iterator):
                 self.model.train()
                 batch = tuple(t.to(self.device) for t in batch)
+
+                # if self.args.use_freelb:
+                #     embeds_init = self.model.bert.embeddings.word_embeddings(batch[0])
+                #     d = getDelta(attention_mask=batch[1], embeds_init=embeds_init)
+                #     d.requires_grad_()
+                #     embeds_init = embeds_init + d
 
                 inputs = {
                     'input_ids': batch[0],
@@ -112,28 +139,67 @@ class Trainer(object):
                     'label_ids_level_1': batch[3],
                     'label_ids_level_2': batch[4]
                 }
-
                 if self.args.model_encoder_type != 'distilbert':
                     inputs['token_type_ids'] = batch[2]
-                outputs = self.model(**inputs)
-                loss = outputs[0]
 
-                if self.args.gradient_accumulation_steps > 1:
-                    loss = loss / self.args.gradient_accumulation_steps
+                if self.args.use_freelb:
+                    # if False:
+                    loss, _ = self.freelb.attack(self.model, inputs)
+                else:
+                    outputs = self.model(**inputs)
+                    loss = outputs[0]
+                    # 洪泛法
+                    if self.args.use_hongfan:
+                        b = 0.2
+                        loss = (loss - b).abs() + b
+                    if self.args.gradient_accumulation_steps > 1:
+                        loss = loss / self.args.gradient_accumulation_steps
 
-                loss.backward()
+                    # with torch.cuda.amp.scale_loss(loss, optimizer) as scaled_loss:
+                    #     scaled_loss.backward()
+                    loss.backward()
+
+                # 对抗训练
+                # if self.args.use_freelb:
+                # if d.grad is not None:
+                #     delta_grad = d.grad.clone().detach()
+                #     d = updateDelta(d, delta_grad, embeds_init)
+                # embeds_init = self.model.bert.embeddings.word_embeddings(batch[0])
+
+                if self.args.use_fgm:
+                    self.fgm.attack()
+                    output_adv = self.model(**inputs)
+                    loss_adv = output_adv[0] / self.args.gradient_accumulation_steps
+                    loss_adv.backward()  # 反向传播，并在正常的grad基础上，累加对抗训练的梯度
+                    self.fgm.restore()  # 恢复embedding参数
+                if self.args.use_pgd:
+                    self.pgd.backup_grad()
+                    for t in range(self.K):
+                        self.pgd.attack(is_first_attack=(t == 0))  # 在embedding上添加对抗扰动, first attack时备份param.data
+                        if t != self.K - 1:
+                            self.model.zero_grad()
+                        else:
+                            self.pgd.restore_grad()
+                        output_adv = self.model(**inputs)
+                        loss_adv = output_adv[0] / self.args.gradient_accumulation_steps
+                        loss_adv.backward()  # 反向传播，并在正常的grad基础上，累加对抗训练的梯度
+                    self.pgd.restore()  # 恢复embedding参数
 
                 tr_loss += loss.item()
                 if (step + 1) % self.args.gradient_accumulation_steps == 0:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
 
                     optimizer.step()
+                    # if self.args.use_swa and (epoch > 3 or swa_flag):
+                    #     optimizer.update_swa()
                     scheduler.step()
                     self.model.zero_grad()
                     global_step += 1
 
                     if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0:
                         results = self.evaluate('dev')
+                        train_loss_all.append(loss.item())
+                        dev_loss_all.append(results['loss'])
 
                         logger.info("*" * 50)
                         logger.info("current step score for metric_key_for_early_stop: {}".format(
@@ -153,6 +219,9 @@ class Trainer(object):
                                 logger.info("best score is {}".format(self.best_score))
 
                         if self.do_early_stop:
+                            # if self.args.use_swa:
+                            #     # 训练结束时使用收集到的swa moving average
+                            #     optimizer.swap_swa_sgd()
                             break
                 if 0 < self.args.max_steps < global_step:
                     epoch_iterator.close()
@@ -172,7 +241,7 @@ class Trainer(object):
                 epoch_iterator.close()
                 break
 
-        return global_step, tr_loss / global_step
+        return global_step, tr_loss / global_step, train_loss_all, dev_loss_all
 
     def evaluate(self, mode):
         if mode == 'test':
@@ -197,6 +266,14 @@ class Trainer(object):
         out_label_ids_level_1 = None
         out_label_ids_level_2 = None
 
+        # 存储每层的结果
+        layer_idx2preds_level_2 = None
+        if "pabee" in self.args.model_encoder_type:
+            layer_idx2preds_level_2 = {
+                layer_idx: None
+                for layer_idx in range(self.config.num_hidden_layers)
+            }
+
         self.model.eval()
 
         for batch in tqdm(eval_dataloader, desc="Evaluating"):
@@ -213,7 +290,10 @@ class Trainer(object):
                     inputs['token_type_ids'] = batch[2]
                 outputs = self.model(**inputs)
 
-                tmp_eval_loss, logits_level_2 = outputs[:2]
+                if self.args.use_multi_task:
+                    tmp_eval_loss, logits_level_2 = outputs[2], outputs[4]
+                else:
+                    tmp_eval_loss, logits_level_2 = outputs[:2]
                 eval_loss += tmp_eval_loss.mean().item()
             nb_eval_steps += 1
 
@@ -226,6 +306,19 @@ class Trainer(object):
                 out_label_ids_level_2 = np.append(out_label_ids_level_2,
                                                   inputs['label_ids_level_2'].detach().cpu().numpy(), axis=0)
 
+            # label prediction for each layer
+            if "pabee" in self.args.model_encoder_type:
+                all_logits_level_2 = outputs[2]
+                for i, logits_ix in enumerate(all_logits_level_2):
+                    if not isinstance(layer_idx2preds_level_2[i], np.ndarray):
+                        layer_idx2preds_level_2[i] = logits_ix.detach().cpu().numpy()
+                    else:
+                        layer_idx2preds_level_2[i] = np.append(
+                            layer_idx2preds_level_2[i],
+                            logits_ix.detach().cpu().numpy(),
+                            axis=0
+                        )
+
         eval_loss = eval_loss / nb_eval_steps
         results = {
             'loss': eval_loss
@@ -235,6 +328,18 @@ class Trainer(object):
         results_level_2 = compute_metrics(preds_level_2, out_label_ids_level_2)
         for key_, val_ in results_level_2.items():
             results[key_ + "__level_2"] = val_
+
+        ############################
+        # 对每层输出一个
+        ############################
+        if "pabee" in self.args.model_encoder_type:
+            for layer_idx in range(self.config.num_hidden_layers):
+                preds = layer_idx2preds_level_2[layer_idx]
+                # label prediction result layer "layer_ix"
+                preds = np.argmax(preds, axis=1)
+                results_idx = compute_metrics(preds, out_label_ids_level_2)
+                for key_, val_ in results_idx.items():
+                    results[key_ + "__level_2" + "__layer_{}".format(layer_idx)] = val_
 
         logger.info("***** Eval results *****")
         for key in sorted(results.keys()):
@@ -249,6 +354,24 @@ class Trainer(object):
                 pred_label_name_level_2 = self.label_list_level_2[pred_label_id]
                 f_out.write("%s,%s" % (str(i), str(pred_label_name_level_2)) + "\n")
 
+        if "pabee" in self.args.model_encoder_type:
+            if mode == "test":
+
+                for layer_idx in range(self.config.num_hidden_layers):
+                    f_out = open(os.path.join(self.args.exp_name, "test_predictions_layer_{}.csv".format(layer_idx)),
+                                 "w", encoding="utf-8")
+                    f_out.write("id,label" + "\n")
+
+                    preds = layer_idx2preds_level_2[layer_idx]
+
+                    # label prediction result at layer "layer_idx"
+                    preds = np.argmax(preds, axis=1)
+
+                    list_preds = preds.tolist()
+                    for i, pred_label_id in enumerate(list_preds):
+                        pred_label_name_level_2 = self.label_list_level_2[pred_label_id]
+                        f_out.write("%s,%s" % (str(i), str(pred_label_name_level_2)) + "\n")
+
         return results
 
     def save_model(self):
@@ -256,7 +379,7 @@ class Trainer(object):
             os.makedirs(self.args.exp_name)
         model_to_save = self.model.module if hasattr(self.model, 'module') else self.model
 
-        if self.args.model_encoder_type == 'nezha':
+        if self.args.model_encoder_type == 'nezha' or self.args.model_encoder_type == 'nezha_pabee':
             json.dump(
                 model_to_save.config.__dict__,
                 open(os.path.join(self.args.exp_name, 'config.json'), 'w', encoding="utf-8"),
@@ -277,7 +400,7 @@ class Trainer(object):
             raise Exception("Model doesn't exists! Train first!")
 
         try:
-            if self.args.model_encoder_type == "nezha":
+            if self.args.model_encoder_type == "nezha" or self.args.model_encoder_type == 'nezha_pabee':
                 output_model_file = os.path.join(self.args.exp_name, "pytorch_model.bin")
                 self.model.load_state_dict(torch.load(output_model_file, map_location=self.device))
             else:
@@ -293,3 +416,151 @@ class Trainer(object):
             logger.info("***** Model Loaded *****")
         except:
             raise Exception("Some models files might be missing...")
+
+    def tree_model_cls(self, mode, gb_tree):
+        if mode == 'test':
+            dataset = self.test_dataset
+        elif mode == 'dev':
+            dataset = self.dev_dataset
+        elif mode == 'train':
+            dataset = self.train_dataset
+            eval_dataset = self.dev_dataset
+        else:
+            raise Exception("Only dev and test dataset available")
+
+        # 顺序采样
+        trian_sampler = SequentialSampler(dataset)
+        train_dataloader = DataLoader(dataset, sampler=trian_sampler, batch_size=self.args.eval_batch_size)
+
+        # eval不进行梯度更新
+        self.model.eval()
+        features = []
+        for batch in tqdm(train_dataloader, desc="Train eval"):
+            batch = tuple(t.to(self.device) for t in batch)
+            with torch.no_grad():
+                inputs = {'input_ids': batch[0],
+                          'attention_mask': batch[1],
+                          'label_ids_level_1': batch[3],
+                          'label_ids_level_2': batch[4],
+                          }
+                if self.args.model_type != 'distilbert':
+                    inputs['token_type_ids'] = batch[2]
+                if len(features) == 0:
+                    features = self.model(**inputs)[-1].detach().cpu().numpy()
+                    labels = batch[4].detach().cpu().numpy()
+                else:
+                    features = np.append(features, self.model(**inputs)[-1].detach().cpu().numpy(), axis=0)
+                    labels = np.append(labels, batch[4].detach().cpu().numpy(), axis=0)
+
+        # gb分类
+        if gb_tree == 'xgb':
+            xgb_cls = xgb.XGBClassifier(
+                max_depth=6, learning_rate=0.05, n_estimators=100,
+                objective="multi:softprob", num_class=35,
+                subsample=0.8, colsample_bytree=0.8, tree_method='gpu_hist',
+                min_child_samples=3, eval_metric='auc', reg_lambda=0.5
+            )
+            xgb_cls.fit(features, labels, verbose=True)
+            results = xgb_cls.predict(features)
+            print(classification_report(labels, results))
+
+            features = []
+            eval_sampler = SequentialSampler(eval_dataset)
+            eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=self.args.eval_batch_size)
+            for batch in tqdm(eval_dataloader, desc="Evaluating"):
+                batch = tuple(t.to(self.device) for t in batch)
+                with torch.no_grad():
+                    inputs = {'input_ids': batch[0],
+                              'attention_mask': batch[1],
+                              'label_ids_level_1': batch[3],
+                              'label_ids_level_2': batch[4],
+                              }
+                    if self.args.model_type != 'distilbert':
+                        inputs['token_type_ids'] = batch[2]
+                    # print(len(features))
+                    if len(features) == 0:
+                        features = self.model(**inputs)[-1].detach().cpu().numpy()
+                        labels = batch[4].detach().cpu().numpy()
+                        # print(features.shape)
+                    else:
+                        features = np.append(features, self.model(**inputs).detach().cpu().numpy(), axis=0)
+                        labels = np.append(labels, batch[4].detach().cpu().numpy(), axis=0)
+            results = xgb_cls.predict(features)
+            print(classification_report(labels, results))
+
+    def ensemble_test(self, mode):
+        if mode == 'test':
+            dataset = self.test_dataset
+        elif mode == 'dev':
+            dataset = self.dev_dataset
+        else:
+            raise Exception("Only dev and test dataset available")
+        eval_sampler = SequentialSampler(dataset)
+        eval_dataloader = DataLoader(dataset, sampler=eval_sampler, batch_size=self.args.eval_batch_size)
+
+        eval_loss = 0.0
+        nb_eval_steps = 0
+        preds_level_1 = None
+        preds_level_2 = None
+        preds_level_2_prob = []
+        out_label_ids_level_1 = None
+        out_label_ids_level_2 = None
+        id_prob_dict = defaultdict()
+
+        self.model.eval()
+
+        i = 0
+        for batch in tqdm(eval_dataloader, desc="Evaluating"):
+            batch = tuple(t.to(self.device) for t in batch)
+
+            i += 1
+            if i == 10:
+                break
+
+            with torch.no_grad():
+                inputs = {
+                    'input_ids': batch[0],
+                    'attention_mask': batch[1],
+                    'label_ids_level_1': batch[3],
+                    'label_ids_level_2': batch[4],
+                }
+
+                if self.args.model_encoder_type != 'distibert':
+                    inputs['token_type_ids'] = batch[2]
+                outputs = self.model(**inputs)
+
+                if self.args.use_multi_task:
+                    tmp_eval_loss, logits_level_2 = outputs[2], outputs[4]
+                else:
+                    tmp_eval_loss, logits_level_2 = outputs[:2]
+                eval_loss += tmp_eval_loss.mean().item()
+            nb_eval_steps += 1
+
+            # label prediction
+            if preds_level_2 is None:
+                torch.set_printoptions(profile="full")
+                preds_level_2 = logits_level_2.detach().cpu().numpy()
+                out_label_ids_level_2 = inputs['label_ids_level_2'].detach().cpu().numpy()
+            else:
+                preds_level_2 = np.append(preds_level_2, logits_level_2.detach().cpu().numpy(), axis=0)
+                out_label_ids_level_2 = np.append(out_label_ids_level_2,
+                                                  inputs['label_ids_level_2'].detach().cpu().numpy(), axis=0)
+            preds_level_2_prob.extend(torch.nn.Softmax(dim=1)(logits_level_2).detach().cpu().numpy())
+            for ids, prob in zip(batch[5], preds_level_2_prob):
+                id_ = ids.item()
+                id_prob_dict[id_] = prob
+
+        eval_loss = eval_loss / nb_eval_steps
+        results = {
+            'loss': eval_loss
+        }
+        max_logits = np.max(preds_level_2, axis=1).tolist()
+        preds_level_2_max = np.argmax(preds_level_2, axis=1)
+
+        list_preds_level_2 = preds_level_2_max.tolist()
+
+        max_logits_dict = {}
+        for idx, (logit, label) in enumerate(zip(max_logits, list_preds_level_2)):
+            max_logits_dict[idx] = (logit, label)
+
+        return list_preds_level_2, max_logits_dict, preds_level_2_prob, id_prob_dict, preds_level_2

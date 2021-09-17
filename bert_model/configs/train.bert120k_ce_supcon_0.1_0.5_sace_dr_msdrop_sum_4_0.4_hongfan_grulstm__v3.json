@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "0",
+    "id": "2",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -70,7 +70,7 @@
     "dropout_num": 4,
     "ms_average": false,
     "use_fgm": false,
-    "use_hongfan": false,
+    "use_hongfan": true,
     "use_freelb": false,
     "use_multi_task": false,
     "use_pgd": false

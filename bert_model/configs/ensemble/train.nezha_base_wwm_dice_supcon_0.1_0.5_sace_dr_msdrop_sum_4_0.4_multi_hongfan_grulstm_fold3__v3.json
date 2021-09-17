@@ -10,7 +10,7 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "ensemble/train.nezha_base_wwm_dice_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold1__v3_fold3",
+    "exp_name": "ensemble/train.nezha_base_wwm_dice_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold3__v3",
     "task": "daguan",
     "model_type": "nezha_base",
     "model_encoder_type": "nezha",
@@ -72,7 +72,7 @@
     "use_fgm": false,
     "use_freelb": false,
     "use_hongfan": true,
-    "use_multi_task": true,
+    "use_multi_task": false,
     "use_pgd": false
   },
   "encoder_params": {

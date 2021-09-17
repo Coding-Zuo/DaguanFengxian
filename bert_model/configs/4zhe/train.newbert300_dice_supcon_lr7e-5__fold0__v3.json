@@ -10,10 +10,10 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "4zhe/train.newnezha_dice_supcon_lr1e-5_nomulti_fgm__fold0__v3",
+    "exp_name": "4zhe/train.newbert300_dice_supcon_lr7e-5__fold0__v3",
     "task": "daguan",
-    "model_type": "new_nezha",
-    "model_encoder_type": "nezha",
+    "model_type": "new_bert",
+    "model_encoder_type": "bert",
     "vocab_mapping": false,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
     "data_dir": "splits_quchong1/fold_0",
@@ -21,7 +21,7 @@
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",
     "label2freq_level_2": "label2freq_level_2.json",
-    "encoder_name_or_path": "/data2/code/DaguanFengxian/pretrain_weight/saveNezha"
+    "encoder_name_or_path": "/data2/code/DaguanFengxian/pretrain_weight/new_bert300"
   },
   "params": {
     "seed": 41,
@@ -34,10 +34,10 @@
     "print_epoch_interval": 5,
     "lr": {
       "lr": 5e-5,
-      "linear_lr": 2e-4,
-      "encoder_learning_rate": 0.1e-4,
+      "linear_lr": 7e-4,
+      "encoder_learning_rate": 0.7e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.1e-4
+      "embeddings_learning_rate": 0.7e-4
     },
     "schedule": {
       "weight_decay": 0.0,
@@ -64,17 +64,17 @@
     "hidden_dim": 768,
     "use_lstm": true,
     "use_gru": true,
-    "aggregator": "bert_pooler,dr_pooler",
+    "aggregator": "bert_pooler",
     "dropout": 0.4,
     "use_ms_dropout": true,
     "dropout_num": 4,
     "ms_average": false,
     "use_fgm": false,
-    "use_hongfan": true,
+    "use_hongfan": false,
     "use_freelb": false,
     "use_swa": false,
     "use_multi_task": false,
-    "use_pgd": true
+    "use_pgd": false
   },
   "encoder_params": {
     "max_seq_len": 150,

@@ -1,7 +1,21 @@
+//loss = 0.30623498938852145
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2 = 0.5546198191993961
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_0 = 0.08802641427291501
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_1 = 0.5111933473366961
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_10 = 0.5540798014493035
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_11 = 0.5546198191993961
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_2 = 0.5362128023637546
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_3 = 0.5350633016422731
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_4 = 0.534305885731731
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_5 = 0.5519043990646968
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_6 = 0.5589826601178505
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_7 = 0.5632172735083282
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_8 = 0.5507986114072397
+//09/15/2021 08:37:33 - INFO - training.Trainer -     macro avg__f1-score__level_2__layer_9 = 0.5550650166373494
 {
   "gpu": {
     "use": true,
-    "id": "0",
+    "id": "3",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,7 +24,7 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "final_ensemble/train.newnezha_pabee_dice_supcon_lr1e-5_nomulti__fold0__v3",
+    "exp_name": "final_ensemble/train.newnezha_pabee_ce_lr1e-5_nomulti__fold0__v3",
     "task": "daguan",
     "model_type": "new_nezha",
     "model_encoder_type": "nezha_pabee",
@@ -24,7 +38,7 @@
     "encoder_name_or_path": "/data2/code/DaguanFengxian/pretrain_weight/saveNezha"
   },
   "params": {
-    "seed": 41,
+    "seed": 1234,
     "max_time": 24,
     "metric_key_for_early_stop": "macro avg__f1-score__level_2",
     "logging_steps": 400,
@@ -33,11 +47,11 @@
     "patience": 12,
     "print_epoch_interval": 5,
     "lr": {
-      "lr": 5e-5,
-      "linear_lr": 5e-4,
-      "encoder_learning_rate": 0.5e-4,
+      "lr": 7e-5,
+      "linear_lr": 7e-4,
+      "encoder_learning_rate": 0.7e-4,
       "min_lr": 1e-6,
-      "embeddings_learning_rate": 0.5e-4
+      "embeddings_learning_rate": 0.7e-4
     },
     "schedule": {
       "weight_decay": 0.0,
@@ -46,15 +60,15 @@
       "num_train_epochs": 50,
       "per_gpu_train_batch_size": 32,
       "gradient_accumulation_steps": 1,
-      "eval_batch_size": 64
+      "eval_batch_size": 32
     },
     "loss": {
-      "loss_fct_name": "ce",
+      "loss_fct_name": "dice",
       "use_focal_loss": true,
       "focal_loss_gamma": 2.0,
       "use_class_weights": false,
       "use_weighted_sampler": true,
-      "contrastive_loss": "supconloss",
+      "contrastive_loss": "None",
       "what_to_contrast": "sample_and_class_embeddings",
       "contrastive_temperature": 0.5,
       "contrastive_loss_weight": 0.1
@@ -64,20 +78,20 @@
     "hidden_dim": 768,
     "use_lstm": true,
     "use_gru": true,
-    "aggregator": "bert_pooler,dr_pooler",
+    "aggregator": "bert_pooler",
     "dropout": 0.4,
     "use_ms_dropout": true,
     "dropout_num": 4,
     "ms_average": false,
     "use_fgm": false,
-    "use_hongfan": true,
+    "use_hongfan": false,
     "use_freelb": false,
     "use_swa": false,
     "use_multi_task": false,
     "use_pgd": false
   },
   "encoder_params": {
-    "max_seq_len": 132,
+    "max_seq_len": 256,
     "do_lower_case": true
   }
 }

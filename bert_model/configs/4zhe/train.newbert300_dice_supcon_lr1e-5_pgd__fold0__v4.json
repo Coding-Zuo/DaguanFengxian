@@ -10,7 +10,7 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "4zhe/train.newbert300_dice_supcon_lr1e-5_fgm__fold0__v4",
+    "exp_name": "4zhe/train.newbert300_dice_supcon_lr1e-5_pgd__fold0__v4",
     "task": "daguan",
     "model_type": "new_bert",
     "model_encoder_type": "bert",
@@ -65,24 +65,24 @@
     "use_lstm": true,
     "use_gru": true,
     "aggregator": "bert_pooler",
-    "dropout": 0.4,
+    "dropout": 0.15,
     "use_ms_dropout": true,
     "dropout_num": 4,
     "ms_average": false,
-    "use_fgm": true,
-    "epsilon_for_adv": 0.5,
+    "use_fgm": false,
+    "epsilon_for_adv": 1.0,
     "adv_rate": 0.5,
-    "alpha_for_adv": 0.5,
+    "alpha_for_adv": 0.3,
     "emb_names": "word_embedding,encoder.layer.0",
     "steps_for_adv": 3,
     "use_hongfan": false,
     "use_freelb": false,
     "use_swa": false,
     "use_multi_task": false,
-    "use_pgd": false
+    "use_pgd": true
   },
   "encoder_params": {
-    "max_seq_len": 150,
+    "max_seq_len": 132,
     "do_lower_case": true
   }
 }

@@ -741,7 +741,7 @@ class BertModel(BertPreTrainedModel):
         self.apply(self.init_bert_weights)
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, output_attention_mask=False,
-                model_distillation=False, output_all_encoded_layers=False, inputs_embeds=None):
+                model_distillation=False, output_all_encoded_layers=False, inputs_embeds=None, ):
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
         if token_type_ids is None:
@@ -1172,7 +1172,7 @@ class BertForJointLSTM(BertPreTrainedModel):
             return intent_logits, slot_logits
 
 
-class ClsNezha(BertPreTrainedModel):
+class ClsNezhaWithPABEE(BertPreTrainedModel):
     def __init__(self, config,
                  args,
                  label_list_level_1,
@@ -1180,7 +1180,7 @@ class ClsNezha(BertPreTrainedModel):
                  label2freq_level_1,
                  label2freq_level_2,
                  ):
-        super(ClsNezha, self).__init__(config)
+        super(ClsNezhaWithPABEE, self).__init__(config)
         self.args = args
         self.args.hidden_size = config.hidden_size
         self.args.hidden_dim = config.hidden_size
@@ -1191,6 +1191,7 @@ class ClsNezha(BertPreTrainedModel):
         self.num_labels_level_2 = len(label_list_level_2)
 
         self.lstm = None
+        self.gru = None
         if self.args.use_lstm:
             self.lstm = BiLSTMEncoder(args)
         if self.args.use_gru:
@@ -1208,37 +1209,18 @@ class ClsNezha(BertPreTrainedModel):
                 aggregator_op = AggregatorLayer(self.args, aggregator_name=aggre_name)
                 self.aggregators.append(aggregator_op)
 
-        # 分类层
-        # self.classifier_level_1 = Classifier(
-        #     args,
-        #     input_dim=self.args.hidden_size * len(self.aggregator_names),
-        #     num_labels=self.num_labels_level_1,
-        # )
-
         if self.args.use_ms_dropout:
             self.classifier_level_2 = MultiSampleClassifier(
                 args,
                 input_dim=self.args.hidden_size,
                 num_labels=self.num_labels_level_2,
             )
-            if self.args.use_multi_task:
-                self.classifier_level_1 = MultiSampleClassifier(
-                    args,
-                    input_dim=self.args.hidden_size,
-                    num_labels=self.num_labels_level_1,
-                )
         else:
             self.classifier_level_2 = Classifier(
                 args,
                 input_dim=self.args.hidden_size,
                 num_labels=self.num_labels_level_2,
             )
-            if self.args.use_multi_task:
-                self.classifier_level_1 = Classifier(
-                    args,
-                    input_dim=self.args.hidden_size,
-                    num_labels=self.num_labels_level_1,
-                )
 
         # class weights
         class_weights_level_1 = []
@@ -1272,36 +1254,42 @@ class ClsNezha(BertPreTrainedModel):
                 ):
         outputs = self.bert(input_ids, attention_mask=attention_mask,
                             token_type_ids=token_type_ids,
-                            inputs_embeds=inputs_embeds)  # sequence_output, pooled_output, (hidden_states), (attentions)
+                            inputs_embeds=inputs_embeds,
+                            output_all_encoded_layers=True)  # sequence_output, pooled_output, (hidden_states), (attentions)
 
         sequence_output = outputs[0]  # torch.Size([64, 132, 768])
         bert_pooled_output = outputs[1]  # [CLS] torch.Size([64, 768])
 
-        if self.args.use_lstm:
-            sequence_output = self.lstm(sequence_output)  # torch.Size([64, 132, 768])
-        if self.args.use_gru:
-            sequence_output = self.gru(sequence_output)  # torch.Size([64, 132, 768])
+        # 每层的隐含状态
+        all_hidden_states = sequence_output
+        assert len(all_hidden_states) == self.config.num_hidden_layers + 1
 
-        list_pooled_outpts = []
-        if "bert_pooler" in self.aggregator_names:
-            list_pooled_outpts.append(bert_pooled_output)
+        # 每层的池化结果：
+        all_pooled_outputs = []
+        for i in range(self.config.num_hidden_layers):
+            hid_state = all_hidden_states[i + 1]
+            if self.args.use_lstm:
+                hid_state = self.lstm(hid_state)
+            if self.args.use_gru:
+                hid_state = self.gru(hid_state)
 
-        for aggre_op in self.aggregators:
-            pooled_outputs_ = aggre_op(sequence_output, mask=attention_mask)
-            list_pooled_outpts.append(pooled_outputs_)
+            bert_pooled_output = self.bert.pooler(hid_state)
+            list_pooled_outputs = []
+            if "bert_pooler" in self.aggregator_names:
+                list_pooled_outputs.append(bert_pooled_output)
+            for aggre_op in self.aggregators:
+                pooled_outputs_ = aggre_op(hid_state, mask=attention_mask)
+                list_pooled_outputs.append(pooled_outputs_)
+            pooled_outputs = sum(list_pooled_outputs)
+            all_pooled_outputs.append(pooled_outputs)
 
-        pooled_outputs = sum(list_pooled_outpts)
-
-        # print("pooled_outputs: ", pooled_outputs.shape)
-
-        # 分类层： level 2
-        logits_level_2 = self.classifier_level_2(pooled_outputs)  # [bsz, self.num_labels_level_2]
-
-        outputs = (logits_level_2,)  # add hidden states and attention if they are here
-
-        if self.args.use_multi_task:
-            logits_level_1 = self.classifier_level_1(pooled_outputs)
-            outputs = (logits_level_1,) + outputs
+        # 每层的logits
+        all_logits = []
+        for i in range(self.config.num_hidden_layers):
+            logits = self.classifier_level_2(all_pooled_outputs[i])
+            all_logits.append(logits)
+        outputs = (all_logits,)
+        outputs = (all_logits[-1],) + outputs
 
         # 1. loss
         if label_ids_level_2 is not None:
@@ -1309,13 +1297,8 @@ class ClsNezha(BertPreTrainedModel):
                 weight = self.class_weights_level_2
             else:
                 weight = None
-
-            if self.args.loss_fct_name == "focal":
-                loss_fct = FocalLoss(
-                    gamma=self.args.focal_loss_gamma,
-                    alpha=weight,
-                    reduction="mean"
-                )
+            if self.args.loss_fct_name == 'focal':
+                loss_fct = FocalLoss(gamma=self.args.focal_loss_gamma, alpha=weight, reduction='mean')
             elif self.args.loss_fct_name == 'dice':
                 loss_fct = DiceLoss(
                     with_logits=True,
@@ -1329,72 +1312,16 @@ class ClsNezha(BertPreTrainedModel):
             else:
                 loss_fct = nn.CrossEntropyLoss(weight=weight)
 
-            loss_level_2 = loss_fct(
-                logits_level_2.view(-1, self.num_labels_level_2),
-                label_ids_level_2.view(-1)
-            )
+            total_loss = None
+            total_weights = 0
 
-            # 基于对比学习的损失计算
-            if self.args.contrastive_loss is not None:
-                if self.args.contrastive_loss == "ntxent_loss":  # InfoNCE
-                    loss_fct_contrast = NTXentLoss(temperature=self.args.contrastive_temperature,
-                                                   distance=DotProductSimilarity())
-                elif self.args.contrastive_loss == "supconloss":
-                    loss_fct_contrast = SupConLoss(temperature=self.args.contrastive_temperature,
-                                                   distance=DotProductSimilarity())
+            for ix, logits_item in enumerate(all_logits):
+                loss_ix = loss_fct(logits_item.view(-1, self.num_labels_level_2), label_ids_level_2.view(-1))
+                if total_loss is None:
+                    total_loss = loss_ix
                 else:
-                    raise ValueError("unsupported contrastive loss function: {}".format(self.args.contrastive_loss))
-
-                if self.args.what_to_contrast == "sample":  # batch中的数据
-                    embeddings = pooled_outputs
-                    labels = label_ids_level_2.view(-1)
-                elif self.args.what_to_contrast == "sample_and_class_embeddings":  # 把分类层的权重也加进来
-                    embeddings = torch.cat([pooled_outputs, self.classifier_level_2.linear.weight], dim=0)
-                    labels = torch.cat([label_ids_level_2.view(-1),
-                                        torch.arange(0, self.num_labels_level_2).to(self.args.device)], dim=-1)
-                else:
-                    raise ValueError("unsupported contrastive features: {}".format(self.args.what_to_contrast))
-
-                contra_loss_level_2 = loss_fct_contrast(embeddings, labels)
-                # logger.info("ce loss: {}; contrastive loss: {}".format(
-                #     loss_level_2, contra_loss_level_2
-                # ))
-                loss_level_2 = loss_level_2 + self.args.contrastive_loss_weight * contra_loss_level_2
-
-            outputs = (loss_level_2,) + outputs
-
-        if label_ids_level_1 is not None and self.args.use_multi_task:
-            if self.args.use_class_weights:
-                weight = self.class_weights_level_1
-            else:
-                weight = None
-
-            loss_level_1 = loss_fct(
-                logits_level_1.view(-1, self.num_labels_level_1),
-                label_ids_level_1.view(-1)
-            )
-
-            # 基于对比学习的损失计算
-            if self.args.contrastive_loss is not None:
-
-                if self.args.what_to_contrast == "sample":  # batch中的数据
-                    embeddings = pooled_outputs
-                    labels = label_ids_level_1.view(-1)
-                elif self.args.what_to_contrast == "sample_and_class_embeddings":  # 把分类层的权重也加进来
-                    embeddings = torch.cat([pooled_outputs, self.classifier_level_1.linear.weight], dim=0)
-                    labels = torch.cat([label_ids_level_1.view(-1),
-                                        torch.arange(0, self.num_labels_level_1).to(self.args.device)], dim=-1)
-                else:
-                    raise ValueError("unsupported contrastive features: {}".format(self.args.what_to_contrast))
-
-                contra_loss_level_1 = loss_fct_contrast(embeddings, labels)
-                # logger.info("ce loss: {}; contrastive loss: {}".format(
-                #     loss_level_2, contra_loss_level_2
-                # ))
-                loss_level_1 = loss_level_1 + self.args.contrastive_loss_weight * contra_loss_level_1
-
-            outputs = (loss_level_1,) + outputs
-            total_loss = loss_level_2 + 0.2 * loss_level_1
-            outputs = (total_loss,) + outputs
+                    total_loss += loss_ix * (ix + 1)
+                total_weights += ix + 1
+            outputs = (total_loss / total_weights,) + outputs
 
         return outputs

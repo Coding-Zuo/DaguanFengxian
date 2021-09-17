@@ -63,7 +63,8 @@ os.makedirs(out_dir, exist_ok=True)
 args_file = "GPU" + str(config['gpu']['id']) + "_" + time.strftime('%Hh%Mm%Ss_on_%b_%d_%Y') + "_" + "training_args.bin"
 torch.save(all_args_dict, os.path.join(out_dir, args_file))
 args.exp_name = args.out_dir
-
+print(torch.version.cuda)
+print(torch.__version__)
 #########################################################################
 # Read Data
 ##########################################################################
@@ -92,7 +93,9 @@ trainer = Trainer(
     test_sample_weights=test_sample_weights,
 )
 
-trainer.train()
+global_step, tr_loss, train_loss_all, dev_loss_all = trainer.train()
+print(train_loss_all)
+print(dev_loss_all)
 trainer.load_model()
 trainer.evaluate("dev")
 trainer.evaluate("test")

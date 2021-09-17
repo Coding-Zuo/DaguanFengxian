@@ -1,7 +1,7 @@
 {
   "gpu": {
     "use": true,
-    "id": "2",
+    "id": "0",
     "local_rank": -1,
     "data_parallel": false
   },
@@ -10,13 +10,13 @@
     "do_eval": true,
     "fp16": true,
     "fp16_opt_level": "O1",
-    "exp_name": "final_ensemble/train.newnezha_dice_supcon_lr1e-5_nomulti_fgm__fold0__v3",
+    "exp_name": "4zhe/train.newnezha_dice_supcon_lr1e-5_nomulti_fgm__fold0__v3",
     "task": "daguan",
     "model_type": "new_nezha",
     "model_encoder_type": "nezha",
     "vocab_mapping": false,
     "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
-    "data_dir": "splits/fold_bert300_0",
+    "data_dir": "splits_quchong1/fold_0",
     "label_file_level_1": "labels_level_1.txt",
     "label_file_level_2": "labels_level_2.txt",
     "label2freq_level_1": "label2freq_level_1.json",
@@ -77,7 +77,7 @@
     "use_pgd": true
   },
   "encoder_params": {
-    "max_seq_len": 132,
+    "max_seq_len": 150,
     "do_lower_case": true
   }
 }
