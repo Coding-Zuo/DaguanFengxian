@@ -181,7 +181,8 @@ def split_train_to_5folds(train_file, to_folder, num_folds=5):
     for i in range(num_folds):
         to_folder_i = os.path.join(to_folder, "fold_%d" % i)
         os.makedirs(to_folder_i, exist_ok=True)
-        split_train_quchong6(i, train_file, dev_ratio=0.167, to_folder=to_folder_i)
+        # split_train_quchong6(i, train_file, dev_ratio=0.167, to_folder=to_folder_i)
+        split_train_quchong(i, train_file, dev_ratio=0.25, to_folder=to_folder_i)
 
 
 if __name__ == '__main__':

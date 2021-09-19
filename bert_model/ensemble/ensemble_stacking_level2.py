@@ -24,7 +24,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 model_root_path = "/data2/code/DaguanFengxian/bert_model/data/outputs/"
 
 """
@@ -67,15 +67,15 @@ def objective(trial):
         'tree_method': 'gpu_hist',
         'lambda': trial.suggest_loguniform('lambda', 1e-3, 10.0),
         'alpha': trial.suggest_loguniform('alpha', 1e-3, 10.0),
-        'colsample_bytree': trial.suggest_loguniform('colsample_bytree', [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
-        'subsample': trial.suggest_loguniform('subsample', [0.4, 0.5, 0.6, 0.7, 0.8, 1.0]),
-        'learning_rate': trial.suggest_loguniform('learning_rate',
-                                                  [0.008, 0.009, 0.01, 0.012, 0.014, 0.016, 0.018, 0.02]),
-        'n_estimators': trial.suggest_loguniform('n_estimators',
-                                                 [10, 20, 50, 100, 200, 500]),
-        'max_depth': trial.suggest_loguniform('max_depth', [5, 7, 9, 11, 13, 15, 17, 20]),
-        'random_state': trial.suggest_loguniform('random_state', [24, 48, 2020]),
-        'min_child_weight': trial.suggest_loguniform('min_child_weight', 1, 300)
+        'colsample_bytree': trial.suggest_categorical('colsample_bytree', [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
+        'subsample': trial.suggest_categorical('subsample', [0.4, 0.5, 0.6, 0.7, 0.8, 1.0]),
+        'learning_rate': trial.suggest_categorical('learning_rate',
+                                                   [0.008, 0.009, 0.01, 0.012, 0.014, 0.016, 0.018, 0.02]),
+        'n_estimators': trial.suggest_categorical('n_estimators',
+                                                  [10, 20, 50, 100, 200, 500]),
+        'max_depth': trial.suggest_categorical('max_depth', [5, 7, 9, 11, 13, 15, 17, 20]),
+        'random_state': trial.suggest_categorical('random_state', [24, 48, 2020]),
+        'min_child_weight': trial.suggest_int('min_child_weight', 1, 300)
     }
 
     xgb_cls = xgb.XGBClassifier(**params)
@@ -87,3 +87,55 @@ def objective(trial):
 
 study = optuna.create_study(direction="maximize")
 study.optimize(objective, n_trials=50)
+print("Number of finished trials: {}".format(len(study.trials)))
+print("Best trial:")
+trial = study.best_trial
+print("  Value: {}".format(trial.value))
+print("  Params: ")
+for key, value in trial.params.items():
+    print("    {}: {}".format(key, value))
+
+params = {
+    'lambda': 0.04564015476537224,
+    'alpha': 2.2405137008670026,
+    'colsample_bytree': 0.9,
+    'subsample': 0.4,
+    'learning_rate': 0.012,
+    'n_estimators': 200,
+    'max_depth': 13,
+    'random_state': 48,
+    'min_child_weight': 45,
+    'num_class': 35,
+    # 'eval_metric' :'auc',
+}
+# xgb_clf = xgb.XGBClassifier(**params, tree_method='gpu_hist')
+xgb_clf = xgb.XGBClassifier(**trial.params, num_labels=35, tree_method='gpu_hist')
+xgb_clf.fit(train_meta_prob, train_meta_label)
+preds = xgb_clf.predict(test_meta_prob)
+list_preds = map(int, preds.tolist())
+print(list_preds)
+
+from sklearn import linear_model
+
+clf = linear_model.LogisticRegression(penalty='l2', C=35, multi_class='ovr')
+clf.fit(train_meta_prob, train_meta_label)
+pred_lg = clf.predict_proba(test_meta_prob)
+pred_lg = np.argmax(pred_lg, axis=1)
+
+"""
+    save
+"""
+
+f_out = open(os.path.join("/data2/code/DaguanFengxian/bert_model/data/ensemble_data/stacking_xgb_4.csv"),
+             "w", encoding="utf-8")
+f_out.write("id,label" + "\n")
+for i, pred_label_id in enumerate(list_preds):
+    pred_label_name_level_2 = label_list[pred_label_id]
+    f_out.write("%s,%s" % (str(i), str(pred_label_name_level_2)) + "\n")
+
+f_out = open(os.path.join("/data2/code/DaguanFengxian/bert_model/data/ensemble_data/stacking_lg_4.csv"),
+             "w", encoding="utf-8")
+f_out.write("id,label" + "\n")
+for i, pred_label_id in enumerate(pred_lg):
+    pred_label_name_level_2 = label_list[pred_label_id]
+    f_out.write("%s,%s" % (str(i), str(pred_label_name_level_2)) + "\n")

@@ -513,9 +513,9 @@ class Trainer(object):
         for batch in tqdm(eval_dataloader, desc="Evaluating"):
             batch = tuple(t.to(self.device) for t in batch)
 
-            i += 1
-            if i == 10:
-                break
+            # i += 1
+            # if i == 10:
+            #     break
 
             with torch.no_grad():
                 inputs = {
@@ -545,8 +545,9 @@ class Trainer(object):
                 preds_level_2 = np.append(preds_level_2, logits_level_2.detach().cpu().numpy(), axis=0)
                 out_label_ids_level_2 = np.append(out_label_ids_level_2,
                                                   inputs['label_ids_level_2'].detach().cpu().numpy(), axis=0)
-            preds_level_2_prob.extend(torch.nn.Softmax(dim=1)(logits_level_2).detach().cpu().numpy())
-            for ids, prob in zip(batch[5], preds_level_2_prob):
+            p = torch.nn.Softmax(dim=1)(logits_level_2).detach().cpu().numpy()
+            preds_level_2_prob.extend(p)
+            for ids, prob in zip(batch[5], p):
                 id_ = ids.item()
                 id_prob_dict[id_] = prob
 

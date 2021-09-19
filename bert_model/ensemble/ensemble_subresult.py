@@ -29,7 +29,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-model_root_path = "/data2/code/DaguanFengxian/bert_model/data/outputs/"
+model_root_path = "/data2/code/DaguanFengxian/bert_model/data/ensemble_data/vote_csv/"
 
 input_files_first = [
     model_root_path + "ensemble_vote_three_rank.csv",
@@ -38,8 +38,27 @@ input_files_first = [
     model_root_path + "ensemble_argmax_three.csv",
     model_root_path + "ensemble_vote.csv",
 ]
+input_files_two = [
+    model_root_path + "09.20_11_8m_fanzhuan.csv",
+    model_root_path + "09.20_12_16m.csv",
+    model_root_path + "0917_eight.csv",
+    model_root_path + "0917_six.csv",
+    model_root_path + "0917ensemble_vote_four_rank.csv",
+    model_root_path + "0918_nine.csv",
+    model_root_path + "newBert-589.csv",
+]
 
-input_file = input_files_first
+input_files_three = [
+    model_root_path + "09.20_11_8m_fanzhuan.csv",
+    model_root_path + "09.20_12_16m.csv",
+    model_root_path + "0917_eight.csv",
+    model_root_path + "0917_six.csv",
+    model_root_path + "0917ensemble_vote_four_rank.csv",
+    model_root_path + "0918_nine.csv",
+    model_root_path + "newBert-589.csv",
+]
+
+input_file = input_files_two
 
 all_res = []
 hashtable = dict()
@@ -58,14 +77,14 @@ label_vote = []
 diff_num = 0
 for key, value in hashtable.items():
     value_list = value.split(",")
-    if len(set(value_list)) != 1: # 1195
+    if len(set(value_list)) != 1:  # 1195
         diff_num += 1
     most_ = Counter(value_list).most_common(1)
     label_vote.append(most_[0][0])
 
 print("需要越策的样本数：", diff_num)
 
-f_out = open(os.path.join("/data2/code/DaguanFengxian/bert_model/data/outputs/ensemble_subresult_first.csv"), "w",
+f_out = open(os.path.join("/data2/code/DaguanFengxian/bert_model/data/ensemble_data/subresult_final111111.csv"), "w",
              encoding="utf-8")
 f_out.write("id,label" + "\n")
 for i, lable in enumerate(label_vote):

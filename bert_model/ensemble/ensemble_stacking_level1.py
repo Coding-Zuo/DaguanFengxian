@@ -24,7 +24,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = '3'
 model_root_path = "/data2/code/DaguanFengxian/bert_model/data/outputs/"
 
 bert120k_5folds = [
@@ -74,10 +74,17 @@ bert300_4folds = [
 ]
 
 bert150k_4folds = [
-    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold0__v3",
-    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold1__v3",
-    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold2__v3",
-    "4zhe/train.newbert300_dice_supcon_lr1e-5_57__fold3__v3",
+    "4zhe/train.bert150k_dice_supcon_grulstm_fgm_lr1e-5_fold0__v3",
+    "4zhe/train.bert150k_dice_supcon_grulstm_fgm_lr1e-5_fold1__v3",
+    "4zhe/train.bert150k_dice_supcon_grulstm_fgm_lr1e-5_fold2__v3",
+    "4zhe/train.bert150k_dice_supcon_grulstm_fgm_lr1e-5_fold3__v3",
+]
+
+nezha_11w_4folds = [
+    "4zhe/train.nezha110000_dice_supcon_lr1e-5_pgd__fold1_plabel__v38",
+    "4zhe/train.nezha110000_dice_supcon_lr1e-5_pgd__fold1__v38",
+    "4zhe/train.nezha110000_dice_supcon_lr1e-5_pgd__fold2__v38",
+    "4zhe/train.nezha110000_dice_supcon_lr1e-5_pgd__fold3__v38",
 ]
 
 
@@ -105,7 +112,7 @@ from sklearn.linear_model import LogisticRegression
 """
     level 1
 """
-all_model = [new_nezha_4folds, new_nezha_4folds1]
+all_model = [nezha_11w_4folds, bert300_4folds, new_nezha_4folds, bert150k_4folds]
 final_learner = LogisticRegression()
 train_meta_prob = None  # [14009,35*k]
 test_meta_prob = None  # [6004,35*k]
