@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn import linear_model
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import metrics
+from sklearn import decomposition
+from sklearn import ensemble
 
 
 def run_training(fold):
@@ -18,19 +20,24 @@ def run_training(fold):
     xtrain = tfv.transform(df_train.review.values)
     xvalid = tfv.transform(df_valid.review.values)
 
+    svd = decomposition.TruncatedSVD(n_components=120)
+    svd.fit(xtrain)
+    xtrain_svd = svd.transform(xtrain)
+    xvalid_svd = svd.transform(xvalid)
+
     ytrain = df_train.sentiment.values
     yvalid = df_valid.sentiment.values
 
-    clf = linear_model.LogisticRegression()
-    clf.fit(xtrain, ytrain)
-    pred = clf.predict_proba(xvalid)[:, 1]
+    clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1)
+    clf.fit(xtrain_svd, ytrain)
+    pred = clf.predict_proba(xvalid_svd)[:, 1]
 
     auc = metrics.roc_auc_score(yvalid, pred)
     print(f"fold={fold}, auc={auc}")
 
-    df_valid.loc[:, "lr_cnt_pred"] = pred
+    df_valid.loc[:, "rf_svd_pred"] = pred
 
-    return df_valid[["id", "sentiment", "kfold", "lr_cnt_pred"]]
+    return df_valid[["id", "sentiment", "kfold", "rf_svd_pred"]]
 
 
 if __name__ == '__main__':
@@ -41,4 +48,4 @@ if __name__ == '__main__':
 
     fin_valid_df = pd.concat(dfs)
     print(fin_valid_df.shape)
-    fin_valid_df.to_csv("/data2/code/DaguanFengxian/ensemble_learn/lr_cnt.csv", index=False)
+    fin_valid_df.to_csv("/data2/code/DaguanFengxian/ensemble_learn/model_pred/rf_svd.csv", index=False)

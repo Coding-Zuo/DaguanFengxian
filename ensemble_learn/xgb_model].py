@@ -8,6 +8,7 @@ from functools import partial
 
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.preprocessing import StandardScaler
+import xgboost as xgb
 
 
 def run_training(pred_df, fold):
@@ -21,13 +22,14 @@ def run_training(pred_df, fold):
     xtrain = scl.fit_transform(xtrian)
     xvalid = scl.transform(xvalid)
 
-    opt = LogisticRegression()
-    opt.fit(xtrian, train_df.sentiment.values)
-    preds = opt.predict_proba(xvalid)[:, 1]
+    clf = xgb.XGBClassifier()
+    clf.fit(xtrian, train_df.sentiment.values)
+    preds = clf.predict_proba(xvalid)[:, 1]
     auc = metrics.roc_auc_score(valid_df.sentiment.values, preds)
     print(f"{fold},{auc}")
-    valid_df.loc[:, "opt_pred"] = preds
-    return opt.coef_
+
+    valid_df.loc[:, "xgb_pred"] = preds
+    return valid_df
 
 
 if __name__ == '__main__':
@@ -44,17 +46,10 @@ if __name__ == '__main__':
     target = df.sentiment.values
     pred_cols = ['lr_pred', 'lr_cnt_pred', 'rf_svd_pred']
 
-    coefs = []
+    dfs = []
     for j in range(5):
-        coefs.append(run_training(df, j))
+        temp_df = run_training(df, j)
+        dfs.append(temp_df)
 
-    coefs = pd.array(coefs)
-    # print(metrics.roc_auc_score(preds_df.sentiment.values, preds_df.opt_pred.values))
-    print(coefs)
-    coefs = np.mean(coefs, axis=0)
-    print(coefs)
-
-    # wt_avg = coefs[0] * df.lr_pred.values + coefs[1] * df.lr_cnt_pred.values + coefs[2] * df.rf_svd_pred.values
-    wt_avg = coefs[0][0] * df.lr_pred.values + coefs[0][1] * df.lr_cnt_pred.values + coefs[0][2] * df.rf_svd_pred.values
-    print("optimal acu after finding coefs")
-    print(metrics.roc_auc_score(target, wt_avg))
+    fin_valid_df = pd.concat(dfs)
+    print(metrics.roc_auc_score(fin_valid_df.sentiment.values, fin_valid_df.xgb_pred.values))

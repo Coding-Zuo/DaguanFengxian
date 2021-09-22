@@ -58,6 +58,16 @@ input_files_three = [
     model_root_path + "newBert-589.csv",
 ]
 
+input_files_four = [
+    model_root_path + "09.20_11_8m_fanzhuan.csv",
+    model_root_path + "09.20_12_16m.csv",
+    model_root_path + "0917_eight.csv",
+    model_root_path + "0917_six.csv",
+    model_root_path + "0917ensemble_vote_four_rank.csv",
+    model_root_path + "0918_nine.csv",
+    model_root_path + "09.21_14.csv",
+]
+
 input_file = input_files_two
 
 all_res = []
@@ -84,7 +94,7 @@ for key, value in hashtable.items():
 
 print("需要越策的样本数：", diff_num)
 
-f_out = open(os.path.join("/data2/code/DaguanFengxian/bert_model/data/ensemble_data/subresult_final111111.csv"), "w",
+f_out = open(os.path.join("/data2/code/DaguanFengxian/bert_model/data/ensemble_data/subresult_final4.csv"), "w",
              encoding="utf-8")
 f_out.write("id,label" + "\n")
 for i, lable in enumerate(label_vote):

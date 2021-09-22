@@ -22,8 +22,11 @@ def get_vocab_mapping(split_num, model_type):
     vocab_path_bert_base = "/home/zuoyuhui/DataGame/haihuai_RC/chinese-bert-wwm-ext/vocab.txt"
     vocab_path_albert_xxlarge = "/data2/pre-model/albert/albert_xxlarge_chinese/vocab.txt"
     vocab_path_bert_large = "/data2/pre-model/bert/bert_large_chinese/vocab.txt"
-    vocab_path_nezha_base = "/data2/pre-model/nezha/nezha-base-www/vocab.txt"
+    vocab_path_nezha_base = "/data2/pre-model/nezha/NEZHA-Base-WWM/vocab.txt"
     vocab_path_nezha_large = "/data2/pre-model/nezha/nezha-large-www/vocab.txt"
+    vocab_path_bert120k = "/data2/code/DaguanFengxian/pretrain_weight/steps_120k/vocab.txt"
+    vocab_path_bert150k = "/data2/code/DaguanFengxian/pretrain_weight/steps_150k/vocab.txt"
+    vocab_path_macbert = "/data2/pre-model/macbert/hfl_chinese-macbert-base/vocab.txt"
 
     if model_type == "albert_xxlarge":
         vocab_path = vocab_path_albert_xxlarge
@@ -35,6 +38,12 @@ def get_vocab_mapping(split_num, model_type):
         vocab_path = vocab_path_nezha_base
     elif model_type == "nezha_large":
         vocab_path = vocab_path_nezha_large
+    elif model_type == "bert_120k":
+        vocab_path = vocab_path_bert120k
+    elif model_type == "bert_150k":
+        vocab_path = vocab_path_bert150k
+    elif model_type == "macbert":
+        vocab_path = vocab_path_macbert
     else:
         print("名字错误")
         exit(1)
@@ -51,13 +60,13 @@ def get_vocab_mapping(split_num, model_type):
 
     # 数据集中出现的词汇
     vocab_in_tasks = defaultdict(int)
-    df_train = pd.read_csv("/data2/code/DaguanFengxian/bert_model/data/splits/fold_" + split_num + "/train.txt",
+    df_train = pd.read_csv("/data2/code/DaguanFengxian/bert_model/data/splits_quchong/fold_" + split_num + "/train.txt",
                            header=None)
-    df_train.columns = ["id", "text", "label"]
-    df_val = pd.read_csv("/data2/code/DaguanFengxian/bert_model/data/splits/fold_" + split_num + "/dev.txt",
+    df_train.columns = ["id", "text", "label", "guid"]
+    df_val = pd.read_csv("/data2/code/DaguanFengxian/bert_model/data/splits_quchong/fold_" + split_num + "/dev.txt",
                          header=None)
-    df_val.columns = ["id", "text", "label"]
-    df_test = pd.read_csv("/data2/code/DaguanFengxian/bert_model/data/splits/test.txt", header=None)
+    df_val.columns = ["id", "text", "label", "guid"]
+    df_test = pd.read_csv("/data2/code/DaguanFengxian/bert_model/data/splits6/test.txt", header=None)
     df_test.columns = ["id", "text", ]
 
     for df_ in [df_train, df_val, df_test]:
@@ -72,9 +81,10 @@ def get_vocab_mapping(split_num, model_type):
     #     print(v, daguan_freq_rank2vocab.index(v))
 
     # 得到一个中文BERT词汇频率的排序
-    counts = json.load(open('/data2/code/DaguanFengxian/bert_model/data/vocab_freq/dict_vocab2freq_0808.json'))
-    del counts["[CLS]"]
-    del counts['[SEP]']
+    # counts = json.load(open('/data2/code/DaguanFengxian/bert_model/data/vocab_freq/dict_vocab2freq_0808.json'))
+    counts = json.load(open('/data2/code/DaguanFengxian/bert_model/data/vocab_freq/dict_vocab2freq_0819.json'))
+    # del counts["[CLS]"]
+    # del counts['[SEP]']
     # del counts["[UNK]"]
     # del counts["[PAD]"]
     # del counts["[MASK]"]
@@ -154,7 +164,7 @@ def get_vocab_mapping(split_num, model_type):
         text_new = " ".join(text_new)
         df_train.loc[i, "text"] = text_new
 
-    output_dir = "/data2/code/DaguanFengxian/bert_model/data/splits/fold_" + split_num + "_" + model_type + "_vocab/"
+    output_dir = "/data2/code/DaguanFengxian/bert_model/data/splits_quchong/fold_" + split_num + "_" + model_type + "_vocab/"
     os.makedirs(output_dir, exist_ok=True)
 
     df_train.to_csv(
@@ -198,7 +208,8 @@ def get_vocab_mapping(split_num, model_type):
 if __name__ == '__main__':
     split_nums = ["0", "1", "2", "3", "4"]
     # model_types = ["albert_xxlarge", "bert", "bert_large"]
-    model_types = ["nezha_base", "nezha_large"]
+    # model_types = ["nezha_base", "nezha_large"]
+    model_types = ["bert", "nezha_base"]
 
     for model_type in model_types:
         for split_num in split_nums:

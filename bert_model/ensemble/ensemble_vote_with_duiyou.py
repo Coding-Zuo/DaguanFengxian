@@ -113,7 +113,20 @@ checkpoint_list_12 = [
     "4zhe/train.nezha120000_dice_supcon_lr1e-5_pgd__fold0__v3",  # 0.56 xia
 ]
 
-checkpoint_list = checkpoint_list_12
+checkpoint_list_13 = [
+    "new_ensemble/train.bert150k_ce_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold0_fgm__v3",
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_pgd__fold1__v3",  # 0.5857
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_pgd__fold1_plabel__v3",  # 0.583 xia
+]
+
+checkpoint_list_14 = [
+    # 0.5697
+    "new_ensemble/train.bert150k_ce_supcon_0.1_0.5_sace_dr_msdrop_sum_4_0.4_multi_hongfan_grulstm_fold0_fgm__v3",
+    "final_ensemble/train.newnezha_dice_supcon_lr7e-5_fgm_drpooler__fold0__v3",  # 0.5682
+    "4zhe/train.newbert300_dice_supcon_lr1e-5_pgd__fold1__v3",  # 0.5857
+]
+
+checkpoint_list = checkpoint_list_14
 
 
 def full_args(args):
@@ -144,19 +157,21 @@ avg_weight = []
     读入队友
 """
 duiyou_data_dir = "/data2/code/DaguanFengxian/bert_model/data/ensemble_data/0917/"
-bert300_570_prob = pd.read_csv(duiyou_data_dir + "bert300_570.csv").values
+# bert300_570_prob = pd.read_csv(duiyou_data_dir + "bert300_570.csv").values
 newBert_589_prob = pd.read_csv(duiyou_data_dir + "newBert_589.csv").values
 nezha300_577_prob = pd.read_csv(duiyou_data_dir + "nezha300_577.csv").values
 nezha11w_582_prob = pd.read_csv(duiyou_data_dir + "nezha11w_582.csv").values  # nine
 pesudoLabel_582_prob = pd.read_csv(duiyou_data_dir + "pesudoLabel_582.csv").values
 nezha8w_570_prob = pd.read_csv(duiyou_data_dir + "nezha8w_570.csv").values  # ten
+nezha300_pLabel_575 = pd.read_csv(duiyou_data_dir + "nezha300_pLabel_575.csv").values  # ten
 
-preds_level_2_prob_list.append(bert300_570_prob.tolist())
+# preds_level_2_prob_list.append(bert300_570_prob.tolist())
 preds_level_2_prob_list.append(newBert_589_prob.tolist())
 preds_level_2_prob_list.append(nezha300_577_prob.tolist())
 preds_level_2_prob_list.append(nezha11w_582_prob.tolist())
 preds_level_2_prob_list.append(pesudoLabel_582_prob.tolist())
-preds_level_2_prob_list.append(nezha8w_570_prob.tolist())
+# preds_level_2_prob_list.append(nezha8w_570_prob.tolist())
+preds_level_2_prob_list.append(nezha300_pLabel_575.tolist())
 duiyou_len = len(preds_level_2_prob_list)
 
 for preds_level_2 in preds_level_2_prob_list:
@@ -307,7 +322,7 @@ print("翻转个数", num_change)
     save
 """
 
-f_out = open(os.path.join("/data2/code/DaguanFengxian/bert_model/data/ensemble_data/0917/09.20_12_16m.csv"),
+f_out = open(os.path.join("/data2/code/DaguanFengxian/bert_model/data/ensemble_data/0917/09.21_14.csv"),
              "w", encoding="utf-8")
 f_out.write("id,label" + "\n")
 for i, pred_label_id in enumerate(vote_label_idx):

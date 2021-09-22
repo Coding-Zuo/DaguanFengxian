@@ -42,7 +42,7 @@ def split_train_to_5folds(train_file, to_folder, num_folds=5):
     os.makedirs(to_folder, exist_ok=True)
 
     for i in range(num_folds):
-        to_folder_i = os.path.join(to_folder, "fold_%d" % i)
+        to_folder_i = os.path.join(to_folder, "fold_bert120k_%d" % i)
         os.makedirs(to_folder_i, exist_ok=True)
         split_train(train_file, dev_ratio=0.2, to_folder=to_folder_i)
 

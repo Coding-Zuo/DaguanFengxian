@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/baseline" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/bert_model" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/baseline2" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SimCSE" isTestSource="false" />
     </content>
     <orderEntry type="jdk" jdkName="Remote Python 3.7.6 (sftp://cpss@10.12.1.150:10022/data2/anaconda3/bin/python3)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
