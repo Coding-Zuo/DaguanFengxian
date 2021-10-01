@@ -32,7 +32,9 @@ from collections import Counter
 """
     IMPORTING CUSTOM MODULES/METHODS
 """
-from args_config import get_params
+import sys
+sys.path.append("/data2/code/DaguanFengxian/bert_model")
+
 from models.model_envs import MODEL_CLASSES
 from dataload.data_loader_bert import load_and_cache_examples
 from training.Trainer import Trainer
