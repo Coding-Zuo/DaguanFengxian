@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 
 import pandas as pd
 
-from label2id import label2id
+from .label2id import label2id
 
 
 logging.basicConfig()

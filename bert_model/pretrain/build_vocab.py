@@ -13,7 +13,6 @@ from tokenizers import BertWordPieceTokenizer, ByteLevelBPETokenizer
 import torch
 from torch import nn
 
-
 logging.basicConfig()
 logger = logging.getLogger('build vocab')
 logger.setLevel(logging.INFO)
@@ -57,34 +56,17 @@ def train_tokenizer(args):
 
 
 if __name__ == '__main__':
-
     model_type = 'bert'
 
     parser = ArgumentParser()
 
-    parser.add_argument(
-        '--seed',
-        type=int,
-        default=42
-    )
+    parser.add_argument('--seed', type=int, default=42)
 
-    parser.add_argument(
-        '--vocab_size',
-        type=int,
-        default=21128
-    )
+    parser.add_argument('--vocab_size', type=int, default=21128)
 
-    parser.add_argument(
-        '--file_path',
-        type=str,
-        default=''
-    )
+    parser.add_argument('--file_path', type=str, default='')
 
-    parser.add_argument(
-        '--out_path',
-        type=str,
-        default=f''
-    )
+    parser.add_argument('--out_path', type=str, default=f'')
 
     warnings.filterwarnings('ignore')
     args = parser.parse_args()

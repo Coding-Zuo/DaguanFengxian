@@ -25,7 +25,6 @@ from transformers import (
     DataCollatorForWholeWordMask as DGDataCollator, PreTrainedTokenizer
 )
 
-
 warnings.filterwarnings('ignore')
 
 logging.basicConfig()
@@ -46,7 +45,6 @@ def load_pickle(load_path):
 
 class LineByLineTextDataset(Dataset):
     def __init__(self, tokenizer: PreTrainedTokenizer, args):
-
         with open(args.pretrain_data_path, encoding="utf-8") as f:
             lines = [line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
 
@@ -64,113 +62,41 @@ class LineByLineTextDataset(Dataset):
 def main():
     parser = ArgumentParser()
 
-    parser.add_argument(
-        '--debug',
-        type=bool,
-        default=False
-    )
+    parser.add_argument('--debug', type=bool, default=False)
 
-    parser.add_argument(
-        '--pretrain_data_path',
-        type=str,
-        default=''
-    )
+    parser.add_argument('--pretrain_data_path', type=str, default='')
 
-    parser.add_argument(
-        '--pretrain_model_path',
-        type=str,
-        default=f''
-    )
+    parser.add_argument('--pretrain_model_path', type=str, default=f'')
 
-    parser.add_argument(
-        '--data_cache',
-        type=str,
-        default=f''
-    )
+    parser.add_argument('--data_cache', type=str, default=f'')
 
-    parser.add_argument(
-        '--vocab_path',
-        type=str,
-        default=f''
-    )
+    parser.add_argument('--vocab_path', type=str, default=f'')
 
-    parser.add_argument(
-        '--save_path',
-        type=str,
-        default=''
-    )
+    parser.add_argument('--save_path', type=str, default='')
 
-    parser.add_argument(
-        '--record_save_path',
-        type=str,
-        default=''
-    )
+    parser.add_argument('--record_save_path', type=str, default='')
 
-    parser.add_argument(
-        '--mlm_probability',
-        type=float,
-        default=0.15
-    )
+    parser.add_argument('--mlm_probability', type=float, default=0.15)
 
-    parser.add_argument(
-        '--num_train_epochs',
-        type=int,
-        default=300
-    )
+    parser.add_argument('--num_train_epochs', type=int, default=300)
 
-    parser.add_argument(
-        '--seq_length',
-        type=int,
-        default=128
-    )
+    parser.add_argument('--seq_length', type=int, default=128)
 
-    parser.add_argument(
-        '--batch_size',
-        type=int,
-        default=32
-    )
+    parser.add_argument('--batch_size', type=int, default=32)
 
-    parser.add_argument(
-        '--learning_rate',
-        type=float,
-        default=6e-5
-    )
+    parser.add_argument('--learning_rate', type=float, default=6e-5)
 
-    parser.add_argument(
-        '--save_steps',
-        type=int,
-        default=10000
-    )
+    parser.add_argument('--save_steps', type=int, default=10000)
 
-    parser.add_argument(
-        '--ckpt_save_limit',
-        type=int,
-        default=5
-    )
+    parser.add_argument('--ckpt_save_limit', type=int, default=5)
 
-    parser.add_argument(
-        '--logging_steps',
-        type=int,
-        default=2000
-    )
+    parser.add_argument('--logging_steps', type=int, default=2000)
 
-    parser.add_argument(
-        '--seed',
-        type=int,
-        default=42
-    )
+    parser.add_argument('--seed', type=int, default=42)
 
-    parser.add_argument(
-        '--fp16',
-        type=str,
-        default=True
-    )
+    parser.add_argument('--fp16', type=str, default=True)
 
-    parser.add_argument(
-        '--fp16_backend',
-        type=str,
-        default='amp'
-    )
+    parser.add_argument('--fp16_backend', type=str, default='amp')
 
     warnings.filterwarnings('ignore')
     args = parser.parse_args()

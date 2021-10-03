@@ -7,8 +7,7 @@ from argparse import ArgumentParser
 
 import pandas as pd
 
-from label2id import label2id
-
+from .label2id import label2id
 
 logging.basicConfig()
 logger = logging.getLogger('')
@@ -53,7 +52,7 @@ def process_text(args):
     for i in range(len(train_sentence)):
         tgt_level1, tgt_level2 = label[i].split('-')
         tgt = label2id[label[i]]
-        line = train_sentence[i] + '\t' + str(tgt) + '\t' + str(int(tgt_level1)-1)
+        line = train_sentence[i] + '\t' + str(tgt) + '\t' + str(int(tgt_level1) - 1)
         train_sentence1.append(line)
 
     logger.info(f'total train data : {len(train_sentence)}.')
@@ -77,29 +76,13 @@ def write(text_list, out_path):
 if __name__ == '__main__':
     parser = ArgumentParser()
 
-    parser.add_argument(
-        '--max_length',
-        type=int,
-        default=128
-    )
+    parser.add_argument('--max_length', type=int, default=128)
 
-    parser.add_argument(
-        '--train_path',
-        type=str,
-        default=''
-    )
+    parser.add_argument('--train_path', type=str, default='')
 
-    parser.add_argument(
-        '--test_path',
-        type=str,
-        default=''
-    )
+    parser.add_argument('--test_path', type=str, default='')
 
-    parser.add_argument(
-        '--out_path',
-        type=str,
-        default=''
-    )
+    parser.add_argument('--out_path', type=str, default='')
 
     warnings.filterwarnings('ignore')
     args = parser.parse_args()
