@@ -1,0 +1,89 @@
+{
+  "gpu": {
+    "use": true,
+    "id": "1",
+    "local_rank": -1,
+    "data_parallel": false
+  },
+  "general": {
+    "do_train": true,
+    "do_eval": true,
+    "fp16": true,
+    "fp16_opt_level": "O1",
+    "exp_name": "4zhe/train.newbert300_dice_supcon_lr1e-5_hongfan0.2_earlystop12__fold1__v3",
+    "task": "daguan",
+    "model_type": "new_bert",
+    "model_encoder_type": "bert",
+    "vocab_mapping": false,
+    "main_data_dir": "/data2/code/DaguanFengxian/bert_model/data/",
+    "data_dir": "splits_quchong1/fold_1",
+    "label_file_level_1": "labels_level_1.txt",
+    "label_file_level_2": "labels_level_2.txt",
+    "label2freq_level_1": "label2freq_level_1.json",
+    "label2freq_level_2": "label2freq_level_2.json",
+    "encoder_name_or_path": "/data2/code/DaguanFengxian/pretrain_weight/new_bert300"
+  },
+  "params": {
+    "seed": 41,
+    "max_time": 24,
+    "metric_key_for_early_stop": "macro avg__f1-score__level_2",
+    "logging_steps": 400,
+    "save_steps": 200,
+    "max_steps": -1,
+    "patience": 12,
+    "print_epoch_interval": 5,
+    "lr": {
+      "lr": 2e-5,
+      "linear_lr": 1e-4,
+      "encoder_learning_rate": 0.1e-4,
+      "min_lr": 1e-6,
+      "embeddings_learning_rate": 0.1e-4
+    },
+    "schedule": {
+      "weight_decay": 0.0,
+      "warmup_steps": 200,
+      "max_grad_norm": 1.0,
+      "num_train_epochs": 50,
+      "per_gpu_train_batch_size": 32,
+      "gradient_accumulation_steps": 1,
+      "eval_batch_size": 64
+    },
+    "loss": {
+      "loss_fct_name": "dice",
+      "use_focal_loss": true,
+      "focal_loss_gamma": 2.0,
+      "use_class_weights": false,
+      "use_weighted_sampler": true,
+      "contrastive_loss": "supconloss",
+      "what_to_contrast": "sample_and_class_embeddings",
+      "contrastive_temperature": 0.5,
+      "contrastive_loss_weight": 0.1
+    }
+  },
+  "net_params": {
+    "hidden_dim": 768,
+    "use_lstm": true,
+    "use_gru": true,
+    "aggregator": "bert_pooler",
+    "dropout": 0.15,
+    "use_ms_dropout": true,
+    "dropout_num": 4,
+    "ms_average": false,
+    "use_fgm": false,
+    "epsilon_for_adv": 1.0,
+    "adv_rate": 0.5,
+    "alpha_for_adv": 0.3,
+    "emb_names": "word_embedding,encoder.layer.0",
+    "steps_for_adv": 3,
+    "use_hongfan": true,
+    "b": 0.2,
+    "use_freelb": false,
+    "use_swa": false,
+    "use_multi_task": false,
+    "use_pgd": false
+  },
+  "encoder_params": {
+    "max_seq_len": 132,
+    "do_lower_case": true
+  }
+}

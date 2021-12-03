@@ -141,6 +141,7 @@ def get_params():
     parser.add_argument('--hidden_dim', help="Please give a value for hidden_dim")
     parser.add_argument('--dropout', help="Please give a value for dropout")
     parser.add_argument('--use_hongfan', help="Please give a value for use_hongfan")
+    parser.add_argument('--b', help="Please give a value for use_hongfan")
     parser.add_argument('--use_fgm', help="Please give a value for use_fgm")
     parser.add_argument('--epsilon_for_adv', help="Please give a value for use_fgm")
     parser.add_argument('--adv_rate', help="Please give a value for use_fgm")
@@ -279,6 +280,8 @@ def get_params():
         params['what_to_contrast'] = args.what_to_contrast
     if args.contrastive_temperature is not None:
         params['contrastive_temperature'] = float(args.contrastive_temperature)
+    if args.b is not None:
+        params['b'] = float(args.b)
     if args.contrastive_loss_weight is not None:
         params['contrastive_loss_weight'] = float(args.contrastive_loss_weight)
 

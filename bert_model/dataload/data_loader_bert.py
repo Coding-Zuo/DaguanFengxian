@@ -89,7 +89,7 @@ class DaguanDataProcessor(object):
             line = line.split(sep)
 
             # id
-            if set_type == "dev":  ######################
+            if set_type == "dev" and self.args.model_type != "bert_base":  ######################
                 id_ = line[3]
             else:
                 id_ = line[0]

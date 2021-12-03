@@ -120,6 +120,9 @@ class Trainer(object):
 
         train_loss_all = []
         dev_loss_all = []
+        train_acc_all = []
+        dev_acc_all = []
+        dev_F1_all = []
         swa_flag = False
         for epoch in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration")
@@ -150,8 +153,8 @@ class Trainer(object):
                     loss = outputs[0]
                     # 洪泛法
                     if self.args.use_hongfan:
-                        b = 0.2
-                        loss = (loss - b).abs() + b
+                        # b = 0.2
+                        loss = (loss - self.args.b).abs() + self.args.b
                     if self.args.gradient_accumulation_steps > 1:
                         loss = loss / self.args.gradient_accumulation_steps
 
@@ -200,6 +203,8 @@ class Trainer(object):
                         results = self.evaluate('dev')
                         train_loss_all.append(loss.item())
                         dev_loss_all.append(results['loss'])
+                        dev_acc_all.append(results['accuracy__level_2'])
+                        dev_F1_all.append(results['macro avg__f1-score__level_2'])
 
                         logger.info("*" * 50)
                         logger.info("current step score for metric_key_for_early_stop: {}".format(
@@ -241,7 +246,7 @@ class Trainer(object):
                 epoch_iterator.close()
                 break
 
-        return global_step, tr_loss / global_step, train_loss_all, dev_loss_all
+        return global_step, tr_loss / global_step, train_loss_all, dev_loss_all, dev_acc_all, dev_F1_all
 
     def evaluate(self, mode):
         if mode == 'test':
